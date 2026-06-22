@@ -1,0 +1,117 @@
+# ==============================================================================
+# TEKNOFEST 2026 - ANKAAI
+# Sinif ID Esleme Konfigurasyonu (Class ID Mapping Configuration)
+# ==============================================================================
+# Bu dosya, farkli veri setlerinden gelen eski sinif ID'lerini
+# projenin standart sinif ID'lerine donusturmek icin kullanilir.
+#
+# KURALLAR:
+#   - Tum etiketler ASCII-safe ve kucuk harfli olmalidir.
+#   - Turkce karakter KULLANILAMAZ (c, g, i, o, s, u yerine ç, ğ, ı, ö, ş, ü degil).
+#   - confidence_score anahtari disinda farkli isim KULLANILAMAZ.
+# ==============================================================================
+
+# Projenin standart sinif listesi (index = YOLO class ID)
+# Her sinifin indexi, YOLO .txt etiket dosyalarindaki class ID'yi belirler.
+standard_classes:
+  # --- Arac Tipleri (0-6) ---
+  0: "sedan"
+  1: "suv"
+  2: "hatchback"
+  3: "pickup"
+  4: "minibus"
+  5: "panelvan"
+  6: "kamyon"
+
+  # --- Sofor Eylemleri (7-14) ---
+  7: "arkaya_bakma"
+  8: "esneme"
+  9: "sigara_icme"
+  10: "su_icme"
+  11: "telefonla_konusma"
+  12: "slalom"
+  13: "etrafa_bakinma"
+  14: "emniyet_kemeri_ihlali"
+
+  # --- Nesneler (15-16) ---
+  15: "teknocan"
+  16: "bilgisayar"
+
+  # --- Yolcular (17-19) ---
+  17: "arka_koltuk_1"
+  18: "arka_koltuk_2"
+  19: "on_koltuk"
+
+  # --- Plaka (20) ---
+  20: "plaka"
+
+# Sinif -> Kategori esleme tablosu (JSON ciktisindaki "kategori" alani)
+class_to_category:
+  sedan: "arac_tipi"
+  suv: "arac_tipi"
+  hatchback: "arac_tipi"
+  pickup: "arac_tipi"
+  minibus: "arac_tipi"
+  panelvan: "arac_tipi"
+  kamyon: "arac_tipi"
+  arkaya_bakma: "sofor_eylemi"
+  esneme: "sofor_eylemi"
+  sigara_icme: "sofor_eylemi"
+  su_icme: "sofor_eylemi"
+  telefonla_konusma: "sofor_eylemi"
+  slalom: "sofor_eylemi"
+  etrafa_bakinma: "sofor_eylemi"
+  emniyet_kemeri_ihlali: "sofor_eylemi"
+  teknocan: "nesneler"
+  bilgisayar: "nesneler"
+  arka_koltuk_1: "yolcular"
+  arka_koltuk_2: "yolcular"
+  on_koltuk: "yolcular"
+  plaka: "plaka"
+
+# Gecerli arac renkleri (JSON ciktisindaki "renk" alani)
+valid_colors:
+  - "beyaz"
+  - "siyah"
+  - "gri"
+  - "kirmizi"
+  - "mavi"
+  - "sari"
+  - "yesil"
+  - "turuncu"
+  - "kahverengi"
+
+# ==============================================================================
+# VERI SETI KAYNAKLARINA GORE SINIF ID ESLEME (SOURCE MAPPINGS)
+# ==============================================================================
+# Her kaynak icin:  eski_id -> yeni_standart_id
+# Yeni veri seti eklediginizde buraya bir blok ekleyin.
+# ==============================================================================
+
+source_mappings:
+  # --- Ornek: Kaggle veri seti ---
+  kaggle_driver_distraction:
+    0: 13   # "safe_driving" -> etrafa_bakinma (ornek)
+    1: 11   # "texting_right" -> telefonla_konusma
+    2: 11   # "texting_left" -> telefonla_konusma
+    3: 11   # "talking_right" -> telefonla_konusma
+    4: 11   # "talking_left" -> telefonla_konusma
+    5: 8    # "operating_radio" -> esneme (ornek - gercek eslemeyi siz belirleyeceksiniz)
+    6: 10   # "drinking" -> su_icme
+    7: 7    # "reaching_behind" -> arkaya_bakma
+    8: 9    # "hair_makeup" -> sigara_icme (ornek - gercek eslemeyi siz belirleyeceksiniz)
+    9: 13   # "talking_passenger" -> etrafa_bakinma
+
+  # --- Ornek: Roboflow veri seti ---
+  roboflow_vehicle_detection:
+    0: 0    # "car" -> sedan
+    1: 1    # "suv" -> suv
+    2: 6    # "truck" -> kamyon
+    3: 4    # "bus" -> minibus
+    4: 20   # "license_plate" -> plaka
+
+  # --- Yeni kaynak eklemek icin bu sablonu kullanin ---
+  # yeni_kaynak_adi:
+  #   eski_id: yeni_standart_id
+  #   0: 0
+  #   1: 7

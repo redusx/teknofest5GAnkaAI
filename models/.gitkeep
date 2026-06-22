@@ -1,0 +1,7 @@
+# Model agirliklari bu dizine yerlestirilir.
+# Docker icerisinde /app/models/ yoluna kopyalanir.
+#
+# Desteklenen formatlar:
+#   .pt      — PyTorch (gelistirme asamasi)
+#   .engine  — TensorRT (yarisma / uretim asamasi)
+#   .onnx    — ONNX (ara format, donusum icin)

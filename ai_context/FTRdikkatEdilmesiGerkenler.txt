@@ -1,0 +1,23 @@
+Final tasarım raporunda YZ çözümünün çalışır hâlinin kodlarıyla ve model ağırlıklarıyla birlikte
+teslim edilmesi beklenmektedir.
+
+Tabelalar senaryoya dahil değil 
+
+Veri Setinin  yarışmacılar tarafından oluşturulması ve sunulması beklenmektedir
+
+Veri setlerini sizin derlemeniz ve modelinizi/modellerinizi birçok senaryoyu kapsayacak biçimde
+geliştirmenizi öneririz.
+
+Final tasarım raporunda backend sunucusu değil, YZ çözümünün çalışır hâlinin verilmesi
+gerekmektedir; dolayısıyla raporda YZ çözümü detaylandırılmalıdır.
+
+Ön ve yan cam bakış açısından olacaktır. Zorlu görüş koşullarına hazır olunması beklenmektedir.,
+
+Kamera Sabit olucak 
+
+Ekstra senaryoların dahil edilmesi özgünlük açısından olumlu yönde etkileyebilir
+
+QoD api si ile iç içe geçmiş olan senaryo iptal finalist takımlar başlangıçta api yi çalıştıracak sonrasında model test edilecek 
+
+Canlı video verisinin nasıl geliceği belli değil normalizasyona standartlaştırmaya ihtiyaç duyuluyor  
+

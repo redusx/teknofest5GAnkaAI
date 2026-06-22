@@ -1,0 +1,178 @@
+PROJE ÖZETİ (5 PUAN) 
+
+Bu proje, karayolu güvenliğini artırmak ve trafik kazalarını minimize etmek amacıyla, 5G teknolojisinin düşük gecikme (URLLC) ve yüksek bant genişliği (eMBB) yeteneklerini yapay zeka tabanlı nesne tespitiyle birleştiren uçtan uca bir akıllı yol güvenliği sistemi sunmaktadır. Mevcut sistemlerdeki yüksek gecikme süresi ve statik video akışı problemlerine çözüm olarak; dinamik ağ kaynak yönetimi sağlayan Quality on Demand (QoD) API ve güvenli erişim sunan Number Verification API entegrasyonu gerçekleştirilmiştir. 
+
+Sistem mimarisi, mobil uç birimlerden alınan canlı video verisinin WebRTC protokolü üzerinden sunucuya iletilmesi ve gRPC tabanlı yüksek hızlı bir veri hattıyla yapay zeka motoruna aktarılması esasına dayanır. Geliştirilen derin öğrenme modelleri; araç hızı, plaka bilgisi ve araç içi riskli durumları (emniyet kemeri, telefon kullanımı vb.) eşzamanlı olarak analiz ederek, tespit edilen riskleri milisaniyeler içerisinde kullanıcı arayüzüne geri bildirmektedir. Proje kapsamında, 5G altyapısının sunduğu dinamik önceliklendirme imkanları kullanılarak, risk anında video kalitesinin otomatik artırılması ve yüksek doğruluklu çıkarımların (inference) gecikmesiz sunulması hedeflenmektedir. 
+
+SİSTEM ÖN TASARIMI (55 PUAN) 
+
+3.1.	Genel Sistem Mimarisi ve Veri Akış Şeması (15 Puan) 
+
+Tasarlanan sistem mimarisi, 5G altyapısının sağladığı düşük gecikme süresi ve yüksek bant genişliği kapasitesini, uçtan uca optimize edilmiş bir veri iletim hattı (pipeline) ile birleştirmektedir. Mimarimiz; İstemci (Mobil Uygulama), Orkestrasyon Sunucusu (Backend), YZ Çıkarım Sunucusu (Inference Engine) ve Turkcell/TOGG API Katmanı olmak üzere dört temel bloktan oluşur. 
+
+1. Canlı Video Verisinin İletimi (WebRTC & Low Latency): Sistemin en büyük potansiyel darboğazı olan yüksek çözünürlüklü video aktarımı, WebRTC (Web Real-Time Communication) protokolü ile çözülmüştür. Video verisi, mobil cihazdan sunucuya UDP tabanlı bir akışla iletilir. WebRTC'nin sunduğu dinamik bant genişliği adaptasyonu sayesinde, ağdaki anlık dalgalanmalar sistemin çalışmasını durdurmaz. 5G ağının sağladığı önceliklendirme ile video paketleri milisaniyeler (ortalama <80ms) içinde işleme katmanına ulaşır. 
+
+2. Veri İşleme ve YZ Entegrasyonu (gRPC & Pipeline): Sunucuya ulaşan her bir kare (frame), backend ve YZ motoru arasında geleneksel JSON/REST yapısı yerine gRPC (Google Remote Procedure Call) üzerinden aktarılır. gRPC, veriyi ikili (binary) formatta taşıdığı için serileştirme yükünü minimize eder ve işlemci üzerindeki darboğazı ortadan kaldırır. YZ modeli, kuantize edilmiş (INT8) ağırlıklarıyla her bir kareyi gerçek zamanlı olarak analiz eder. 
+
+3. Sonuçların Geri Döndürülmesi ve Hız/Protokol: Analiz sonuçları (nesne koordinatları, plaka metni, risk skorları), gRPC Bidirectional Streaming veya WebRTC Data Channel üzerinden asenkron olarak kullanıcı arayüzüne (UI) basılır. Bu yöntemle, sonuçlar video akışıyla tamamen senkronize bir şekilde, saniyede 30-60 kez güncellenerek ekrana yansıtılır. Geri bildirim hızı, ağ gecikmesi dahil toplamda 150ms altında hedeflenmiştir. 
+
+4. Darboğaz Yönetimi ve QoD Stratejisi: Sistemin darboğaz yaratmadan çalışması için "Dinamik Kaynak Yönetimi" uygulanır. YZ modeli tehlikeyi uzaktan fark ettiğinde, Quality on Demand (QoD) API üzerinden ağdan ek bant genişliği talep edilir. Bu sayede, sistem sadece ihtiyaç anında yüksek veri trafiği oluşturarak hem enerji tasarrufu sağlar hem de ağın tıkanmasını önler. 
+
+ 
+
+3.2.	Yapay Zeka Modeli ve Çıkarım Tasarımı (20 Puan) 
+
+Sistemde canlı video akışı üzerinden eşzamanlı çoklu görev (araç tespiti, plaka tespiti, araç içi nesne analizi) yürütüleceği için, çıkarım (inference) mimarisi hız ve doğruluk dengesi gözetilerek tasarlanmıştır. 
+
+Temel Model ve İnce Ayar (Fine-Tuning): Nesne tespiti görevleri için temel (foundational) model olarak, düşük parametre sayısı ve yüksek FPS kapasitesi nedeniyle YOLOv10-Nano (veya v8-Nano) mimarisi seçilmiştir. Model, yarışma komitesi tarafından sağlanacak TOGG test veri seti kullanılarak transfer öğrenme (transfer learning) yöntemiyle eğitilecek ve sınıf dengesizliklerini gidermek için veri artırımı (data augmentation) tekniklerinden geçirilecektir. Ayrıca, videodaki araçların her karede yeniden analiz edilmesini önlemek ve işlemci yükünü azaltmak amacıyla sisteme ByteTrack nesne takip algoritması entegre edilmiştir. 
+
+Gecikme ve Doğruluk Optimizasyonu (Quantization): Canlı sistemin doğası gereği oluşabilecek darboğazları engellemek için model kuantizasyonu (quantization) uygulanacaktır. PyTorch üzerinde FP32 (32-bit kayan nokta) formatında eğitilen model, çıkarım sunucusunda TensorRT motoru kullanılarak INT8 formatına dönüştürülecektir. Bu yaklaşım, %1-2 bandında kabul edilebilir bir doğruluk kaybına karşın çıkarım hızında 3-4 kata varan bir ivmelenme sağlayarak 5G'nin düşük gecikme (URLLC) vizyonunu destekleyecektir. 
+
+Uçtan Uca Çıkarım İş Hattı: Video karesi sunucuya ulaştığında; (1) Ön işleme (yeniden boyutlandırma/normalizasyon), (2) YOLOv10 ile nesne/plaka tespiti, (3) ByteTrack ile nesne takibi, (4) Sonuçların JSON formatında serileştirilmesi adımları sırasıyla işletilerek gRPC üzerinden ana sunucuya iletilir. 
+
+ 
+
+Bileşen / Görev 
+
+Seçilen Teknoloji / Model 
+
+Kullanım Amacı / Açıklama 
+
+YZ Çatısı (Framework) 
+
+PyTorch & Ultralytics 
+
+Modelin eğitilmesi, test edilmesi ve dışa aktarılması. 
+
+Temel Model 
+
+YOLOv10-Nano 
+
+Araç, plaka ve araç içi riskli durumların eşzamanlı tespiti. 
+
+Takip Algoritması 
+
+ByteTrack 
+
+Tespit edilen araçların video akışı boyunca kimliklendirilmesi (ID tracking). 
+
+Optimizasyon 
+
+TensorRT (INT8 Quantization) 
+
+Çıkarım süresini (latency) minimize etmek için modelin sıkıştırılması. 
+
+Çıkarım Sunucusu 
+
+FastAPI (Python) 
+
+YZ modelini asenkron olarak ayağa kaldırma ve gRPC haberleşmesi. 
+
+ 
+
+ 
+
+3.3.	Yazılım Mimari Tasarımı (20 Puan) 
+
+Sistem; eşzamanlı video akışlarını, YZ çıkarım sonuçlarını ve operatör API'lerini (Number Verification, QoD) darboğaz yaratmadan yönetecek asenkron bir mikroservis mimarisi üzerine kurgulanmıştır. 
+
+Sunucu (Arka Yüz) Mimarisi: 
+
+Ana sunucu, olay güdümlü (event-driven) yapısı ve yüksek eşzamanlı G/Ç (I/O) kapasitesi nedeniyle Node.js ve TypeScript kullanılarak tasarlanmıştır. Sunucu, mobil istemcilerden gelen WebRTC video akışlarını karşılar ve işlemciyi yormadan YZ çıkarım sunucusuna gRPC üzerinden yönlendirir. Veritabanı katmanında, yapılandırılmış verilerin (tespit logları, kullanıcı bilgileri) güvenli ve tutarlı bir şekilde saklanması için PostgreSQL tercih edilmiştir. Veritabanı işlemleri, tip güvenliğini (type-safety) sağlamak ve şema yönetimini hızlandırmak amacıyla Prisma ORM ile yönetilmektedir. 
+
+Mobil Uygulama (Ön Yüz) Mimarisi: 
+
+Kullanıcı arayüzü, çapraz platform destekleyen React Native ile geliştirilecektir. Uygulama, açılışta Number Verification API'sini çağırarak kullanıcıyı şifresiz olarak sisteme dahil eder. Araç mesafesinin belirli bir eşiğin altına düşmesi durumunda, arka uçtan gelen tetikleyici (trigger) sinyaliyle Quality on Demand (QoD) API'sine istek atarak ağ kalitesini anlık olarak yükseltir ve yüksek çözünürlüklü video akışını başlatır. 
+
+Tablo 2: Sistem Donanım ve Yazılım Bileşenleri Özeti 
+
+Bileşen 
+
+Teknoloji / Çatı (Framework) 
+
+Temel Görev 
+
+Mobil Ön Yüz 
+
+React Native 
+
+Kamera akışı (WebRTC), QoD ve Number Verification entegrasyonu, arayüz. 
+
+Ana Sunucu (Back-end) 
+
+Node.js (Express/Fastify) & TypeScript 
+
+API yönetimi, istemci-YZ arası veri yönlendirmesi (gRPC), tetikleyici (trigger) kontrolü. 
+
+Veritabanı & ORM 
+
+PostgreSQL & Prisma ORM 
+
+Kullanıcı verilerinin, yetkilendirmelerin ve analiz geçmişinin tip güvenli (type-safe) saklanması. 
+
+İletişim Protokolleri 
+
+WebRTC & gRPC (Protobuf) 
+
+Düşük gecikmeli video aktarımı (WebRTC) ve yüksek hızlı sunucu içi veri transferi (gRPC). 
+
+ 
+
+YÖNTEM (20 PUAN) 
+
+Projenin geliştirilme ve entegrasyon süreçleri, yarışma şartnamesinde belirtilen aşamalara uygun olarak, Çevik (Agile) proje yönetimi metodolojisiyle aşağıdaki gibi kurgulanmıştır: 
+
+1. Veri Seti ve Bilgilendirme Aşaması (Hazırlık ve Temel Eğitim): 
+
+Girdi: Turkcell ve TOGG tarafından sağlanacak, araç hareketini, gerçek hız ve plaka bilgilerini içeren test veri seti. 
+
+Aksiyon: Veri seti, YOLOv10-Nano modelinin eğitimi için ön işlemeden (görüntü normalizasyonu ve etiket doğrulama) geçirilecektir. Temel model transfer öğrenme (transfer learning) ile bu özel veri setine adapte edilecektir. 
+
+Çıktı: Eğitilmiş ve ilk testleri yapılmış ham yapay zeka modeli. 
+
+2. Geliştirme ve API Entegrasyonu Aşaması (Ön Tasarım Sonrası Dönem): Sistem mimarisinin kodlanması üç koldan eşzamanlı yürütülecektir: 
+
+Mobil Geliştirme: React Native ile kullanıcı arayüzü oluşturulacak, Number Verification API entegrasyonu ile şifresiz giriş sistemi kodlanacaktır. Araç mesafesine bağlı olarak yüksek çözünürlüklü video talebi için Quality on Demand (QoD) API tetikleyicisi mobil uygulamaya gömülecektir. 
+
+Arka Uç (Back-end) Geliştirme: Node.js ve TypeScript kullanılarak, WebRTC üzerinden video akışını karşılayacak ve Prisma ORM üzerinden PostgreSQL'e log kaydı atacak sunucu ayağa kaldırılacaktır. 
+
+YZ Sunucu Entegrasyonu: Eğitilen model Python tabanlı çıkarım sunucusuna alınacak ve Node.js ile arasındaki milisaniyelik veri akışı için gRPC haberleşmesi kurulacaktır. 
+
+3. İkinci Aşama ve Final Tasarım (Optimizasyon): 
+
+Aksiyon: Ön Tasarım Raporu'ndan alınan geri bildirimler doğrultusunda sistemdeki darboğazlar test edilecektir. Model çıkarım hızını (FPS) artırmak için TensorRT kuantizasyonu uygulanarak ağırlıklar INT8 formatına dönüştürülecektir. 5G ağ simülasyonları ile uçtan uca gecikme (latency) testleri tamamlanacaktır. 
+
+Çıktı: Final Tasarım Raporu ve sahada çalışmaya hazır, stabilize edilmiş prototip. 
+
+Proje Çalışma Kurgusu Akış Diyagramı 
+
+metin, ekran görüntüsü, yazı tipi, tasarım içeren bir resim
+
+Yapay zeka tarafından oluşturulan içerik yanlış olabilir. 
+
+ÖZGÜNLÜK (10 PUAN) 
+
+Projemizin özgünlüğü, sadece bir yapay zeka çıkarım modeli sunmasından değil; 5G altyapısını (URLLC ve eMBB) ve operatör API'lerini merkeze alarak kaynakları otonom şekilde yöneten "Dinamik Bant Genişliği ve Gecikme Optimizasyonu" mimarisinden kaynaklanmaktadır. 
+
+Mevcut Piyasa Çözümlerine Kıyasla Mimari Yeniliklerimiz: 
+
+Kaba Kuvvet Yerine Akıllı Tetikleme (Smart QoD Triggering): Literatürdeki mevcut akıllı trafik sistemleri (ITS), kameralardan sürekli olarak yüksek çözünürlüklü veri akışı çekerek şebeke üzerinde ciddi bir yük (overhead) oluşturur. Tasarımımız ise "Hibrit Çözünürlük Algoritması" kullanır. Sistem rölantide düşük veri tüketirken (WebRTC üzerinden 480p), sadece YZ modeli bir tehdit veya araç yaklaştığını algıladığında otonom olarak Quality on Demand (QoD) API'sini tetikleyerek şebekeden öncelikli yüksek bant genişliği (1080p+) talep eder. Bu yaklaşım, sistemin hem şebeke dostu (network-friendly) olmasını hem de enerji verimliliğini maksimize etmesini sağlar. 
+
+JSON/REST Yerine Protobuf/gRPC İş Hattı: Piyasadaki birçok IoT ve mobil tabanlı YZ uygulamasında cihaz-sunucu veya sunucu-model arası haberleşmede HTTP/REST kullanılmaktadır. Mimarimizde ise veritabanı (Prisma/PostgreSQL), backend (Node.js) ve çıkarım motoru (FastAPI) arasındaki veri transferi tamamen ikili (binary) formatta, gRPC üzerinden sağlanır. Bu tercih, serileştirme gecikmelerini baypas ederek 5G'nin vaat ettiği milisaniyelik tepki sürelerini yazılım katmanında da güvence altına alır. 
+
+Gelecekte Geliştirilebilecek Alternatif ve Yenilikçi Ürün Fikirleri: Kurulan bu düşük gecikmeli WebRTC + gRPC + QoD altyapısı, yalnızca karayolu denetimi için değil, geleceğin akıllı şehir (Smart City) konseptlerinde farklı dikey sektörlere hızla entegre edilebilir: 
+
+V2X (Vehicle-to-Everything) Kaza Önleme Ağı: Kurulan bu altyapı, ileride otonom araçlarla haberleşerek, kör noktalardaki yayaları veya kazaları araç sürücüsüne değil, doğrudan aracın otonom fren sistemine (milisaniyeler içinde) ileten bir "Uç Bilişim (Edge Computing) Kalkanı"na dönüştürülebilir. 
+
+Akıllı Lojistik ve Filo Güvenlik Sistemleri: Ağır vasıta şoförlerinin kabin içi canlı analizleri (uyku hali, yorgunluk, telefon kullanımı) için kullanılabilir. Risk anında QoD tetiklenerek merkez ofise yüksek çözünürlüklü acil durum akışı sağlanabilir. 
+
+Otonom Acil Durum Yönlendirmesi (Ambulans/İtfaiye): Sistem, ambulans gibi geçiş üstünlüğü olan araçları tespit ettiğinde, rotadaki diğer akıllı trafik ışıklarına ve sürücülerin mobil cihazlarına anlık uyarılar göndererek "yeşil koridor" açan bir orkestrasyon merkezine evrilebilir. 
+
+ZAMAN PLANLAMASI (5 PUAN) 
+
+Projemizin geliştirme, entegrasyon ve test süreçleri; belirsizlikleri en aza indirmek, hızlı prototipler üretebilmek ve donanım/yazılım entegrasyonundaki olası darboğazları erken tespit edebilmek amacıyla Çevik (Agile) proje yönetimi metodolojisi ve Scrum çerçevesi üzerine kurgulanmıştır. 
+
+Proje Takip Aracı ve Metodoloji Kullanımı: 
+
+Süreç yönetimi, görev dağılımı ve ilerleme takibi için endüstri standardı olan Jira Software kullanılacaktır. Tüm geliştirme süreci 2 haftalık (14 günlük) "Sprint" döngülerine bölünmüştür. Kod versiyonlama ve görev eşleştirme süreçleri için GitHub kullanılacak olup, Jira ile tam entegre çalıştırılacaktır. Bu sayede her bir "Commit" ve "Pull Request", Jira üzerindeki ilgili "Task/Epic" kartıyla otomatik eşleşecek; yazılım (Node.js/React Native) ve yapay zeka (Python/YOLO) ekipleri arasındaki eşzamanlı çalışma şeffaf bir biçimde yönetilecektir. 
+

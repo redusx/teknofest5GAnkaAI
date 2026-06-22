@@ -1,0 +1,457 @@
+5G & YAPAY ZEKA İLE 
+AKILLI YOL GÜVENLİĞİ 
+YARIŞMASI 
+TEKNİK ŞARTNAMESİ 
+2026 
+İÇİNDEKİLER 
+1. YARIŞMA AMACI ................................................................................................................ 3 
+2. YARIŞMA TARİFİ ................................................................................................................. 3 
+3. YARIŞMA KATILIM KOŞULLARI ........................................................................................... 4 
+4. YARIŞMA DETAYLARI ......................................................................................................... 6 
+4.1. Yarışma Sırasında Kullanılacak Yazılım veya Donanımlar .......................................... 6 
+Number Verification (Numara Doğrulama) API .............................................................. 6 
+Quality on Demand (Talep Üzerine Kalite) API ................................................................ 7 
+4.2. Yarışma Aşamaları ........................................................................................................ 7 
+4.3. Eğitim, Test ve Yarışma Verileri ..................................................................................... 8 
+4.4. Hedef / Nesne Tespiti .................................................................................................... 8 
+4.5. Yarışma Kuralları ............................................................................................................ 9 
+5. PUANLANDIRMA ............................................................................................................... 9 
+6. YARIŞMA TAKVİMİ VE DEĞERLENDİRME ........................................................................... 9 
+6.1. Başvuru .........................................................................................................................10 
+6.2. Bilgilendirme Seansı ....................................................................................................10 
+6.3. Ön Tasarım Raporu ......................................................................................................10 
+6.4. Ön Tasarım Raporunun Değerlendirilmesi, Sonuçların Duyurulması ......................10 
+6.5. Takımlarla Soru-Cevap ve Geribildirim Toplantısı .....................................................10 
+6.6. Final Tasarım Raporlarının Değerlendirilmesi ve Final Yarışma Takımlarının 
+Duyurulması ........................................................................................................................10 
+6.7. Final Yarışma ...............................................................................................................11 
+6.8. TEKNOFEST Şanlıurfa ..................................................................................................11 
+7. ÖDÜLLER .........................................................................................................................11 
+En İyi Uygulama Mimarisi Ödülü ........................................................................................12 
+En İyi Sunum Ödülü ............................................................................................................12 
+Turkcell Özel Ödülü .............................................................................................................12 
+8. GENEL KURALLAR ..........................................................................................................12 
+9. ETİK KURALLAR ................................................................................................................12 
+TABLOLAR 
+Tablo 1. Puanlandırma Tablosu ................................................................................................ 9 
+Tablo 2. Yarışma Takvimi .......................................................................................................... 9 
+Tablo 3. Ödüller Tablosu .........................................................................................................11 
+1. YARIŞMA AMACI 
+TEKNOFEST 2026 kapsamında, Turkcell tarafından düzenlenen "5G & Yapay Zekâ ile 
+Akıllı Yol Güvenliği Yarışması”, 5G şebekesinin sunduğu teknolojik yetenekleri 
+Uygulama Programlama Arayüzleri (Application Programming Interfaces; API) aracılığıyla 
+kullanarak yapay zekâ modellerinden yararlanıp katma değerli çözüm üreten 
+uygulamalar geliştirilmesini hedefliyor. 
+Yarışmacı takımlar, geliştirecekleri uygulama ile bir canlı video akışını, yapay zekâ temelli 
+algoritma yardımı ile işleyerek faydalı veri çıkartımı yapacak. Geliştirilen uygulama, video 
+akışında görülen TOGG aracın yaklaştığını algıladığında Talep Üzerine Kalite (Quality on 
+Demand; QoD) şebeke servis API’si sayesinde geçici olarak yüksek ağ kalitesi talep 
+ederek başarımı daha yüksek yapay zekâ temelli algoritma koşturabilecek. Yarışmacıların 
+geliştirdiği uygulamalar, ağ kalitesinin arttırıldığı ve arttırılmadığı senaryolar üzerinden 
+değerlendirilirken, ölçeklenebilirlik ve gerçek hayata uyarlanabilirlik perspektifleri 
+değerlendirmeye alınacaktır. 
+2. YARIŞMA TARİFİ 
+Geleneksel telekomünikasyon ağları, uzun yıllar boyunca kapalı kutu sistemler olarak 
+çalışmış ve geliştiricilerin şebeke yeteneklerine doğrudan erişimi kısıtlı kalmıştır. Ancak 
+5G teknolojisi ile birlikte şebekeler, sadece veri taşıyan birer altyapı olmaktan çıkıp, 
+dışarıya açılabilir API’ler sayesinde yazılımla yönetilebilir ve programlanabilir birer 
+platform haline dönüşmüştür. 
+5G teknoloji mimarisinde çeşitli API’ler, uygulamalar ile 5G Çekirdek Şebeke (core 
+network) arasında bir köprü görevi görür. Geliştirilen uygulama, operatörün Açık Ağ Geçidi 
+(Open Gateway) platformu üzerindeki API'ler aracılığıyla 5G çekirdek şebeke ile 
+haberleşir. Böylece uygulama, şebekeden sadece internet veya veri transfer hizmeti 
+almaz, şebekeyi kendi ihtiyaçlarına göre dinamik olarak kullanabilir. 
+Yarışma kapsamında, Turkcell tarafından sağlanacak olan gelişmiş 5G teknolojisinin 
+somut örnekleri olan Numara Doğrulama (Number Verification) ve Talep Üzerine Kalite 
+(Quality on Demand) API’leri kullanılacaktır. Bu teknolojiler yapılacak bilgilendirme 
+seansında detaylı şekilde tanıtılacaktır. 
+YARIŞMA ADIMLARI: 
+• Turkcell yarışma komitesi tarafından, TOGG iş birliği ile yarışmada kullanılması 
+amacıyla arındırılmış bir test veri seti oluşturulur: 
+o Kamera tarafından kaydedilen araç hareketinin video dosyası, 
+o Videoda görülen araca ait gerçek hız, araç içi nesneler, plaka bilgileri. 
+• Kullanılabilecek  teknikler,  veri  seti  detayları  ve  beklentiler  konusunda 
+belirlenen zaman planına göre genel bilgilendirme seansı düzenlenecektir. 
+• Takımlar, geliştirecekleri mobil uygulamada Number Verification ve Quality on 
+Demand API’lerini kullanarak kamera video akışını alır. 
+o Telefon üzerindeki Mobil Uygulamaya kullanıcı girişinin ve doğrulama 
+yapılmasının Number Verification API’si ile sağlanması beklenir. 
+o Mobil Uygulamanın, aracın yakınlığına göre Quality on Demand 
+API’sinden yararlanarak ağdan daha yüksek çözünürlüklü video akışı 
+talep etmesi beklenir. 
+o Video akışı üzerinde araç ve araca dair detayların (plaka, araç hızı, araç içi 
+nesne, risk teşkil eden durumlar vb.) tespitini en verimli biçimde, en 
+yüksek başarımla yapmayı hedefleyen yapay zekâ modeli geliştirilmesi 
+hedeflenir. 
+• Geliştirilen modeller, ön tasarım raporu halinde yarışma komitesine 
+sunulacaktır. Ön değerlendirme aşamasında başarı kriterlerini sağlayan 
+takımlar bir sonraki aşamaya geçebilecektir. 
+• İkinci aşamada ise, takımların ön tasarım raporları üzerinden geribildirimler 
+verilir. Yarışmaya ilişkin soru-cevap seansı tekrarlanır ve final tasarım raporu 
+istenir. 
+• Final tasarım raporlarının komite tarafından değerlendirilmesi neticesinde 
+final etabını yarışmaya hak kazanan takımlar yani finalistler ilan edilir. 
+Görevler ve raporlama hakkında detaylı bilgi ve puanlandırma kriterleri işbu şartname 
+içerisinde ifade edilmektedir. 
+3. YARIŞMA KATILIM KOŞULLARI 
+• Yarışmaya; Türkiye ve yurt dışında öğrenim gören Lisans, Yüksek Lisans, Doktora 
+ve Açık Öğretim öğrencileri takım halinde katılabilir. 
+• Takımlar en az 2, en fazla 5 kişiden oluşmalıdır. Bu kişilerden biri İletişim 
+Sorumlusu olarak görevlendirilmeli, takım adına rapor iletmekten, iletişim 
+sağlamaktan sorumlu olmalıdır (Danışman bu sayıya dahil değildir). 
+• Finalist olan takımlar final yarışması sırasında, yarışma alanında her takımdan en 
+fazla 3 yarışmacı olacak şekilde bulunabilir. Yarışmacı sayısı 3’ten fazla olan 
+takımlar, farklı yarışma oturumlarında kendi aralarında dönüşümlü olarak yarışma 
+alanında bulunabilirler. 
+• Takımlar, tek bir okuldan oluşturulabileceği gibi, farklı yükseköğretim 
+kurumlarından öğrencilerin bir araya gelmesi ile karma takım olarak da 
+oluşturulabilir. 
+• TEKNOFEST Yarışmalar Koordinatörlüğünün belirlediği bir tarihte öğrenciler için 
+onaylı öğrenci belgelerinin, danışmanlar için ise öğretim üyesi/görevlisi, araştırma 
+görevlisi veya öğretmen olduklarını gösteren onaylı belgenin sunulması 
+gerekmektedir. 
+• Bir takımın üyesi aynı yarışmanın başka bir takımının üyesi olarak bulunamaz. 
+• Aynı takım üyeleri farklı projeler ile TEKNOFEST kapsamında düzenlenen diğer 
+yarışmalara başvuru yapabilir. 
+• Aynı proje ile yalnızca tek bir kategoriye veya tek bir yarışmaya başvurulabilir. Aynı 
+proje ile farklı kategori veya TEKNOFEST kapsamında düzenlenen farklı yarışmaya 
+başvuru yapan takımların veya kişilerin başvuruları geçersiz sayılacaktır. 
+• Yarışmaya katılacak takımların danışman alma zorunluluğu bulunmamaktadır. 
+Başvurularda takım danışmanı bulunması durumunda danışmanlık belgesi 
+gönderilmesi zorunludur. 
+• Danışman olarak görev yapacak kişinin danışmanlık görevlerini yerine 
+getireceğine dair belgenin (Görevlendirme Yazısı) ıslak imzalı olarak TEKNOFEST 
+Yarışmalar Koordinatörlüğünün belirlediği bir tarihte sisteme yüklenmesi 
+gerekmektedir. 
+• Lisans ve lisansüstü öğrencileri seviyesindeki takımlar, bir öğretim 
+görevlisini/üyesini veya araştırma görevlisini danışman olarak alabilir. 
+• Yarışmacı daha önce katıldığı proje raporunun birebir aynısı ve/veya kopya raporu 
+ile katılamamaktadır. Geçmiş yıl rapor kapsamında www.TEKNOFEST.org 
+adresinden yayınlanmış olan raporlar üzerinden alıntı yapılması halinde kaynak 
+belirtilmelidir. Kaynak belirtme formatına şartnamede yer alan genel kurallar 
+başlığından ulaşılabilir. 
+• Yarışma süreci boyunca TEKNOFEST Yarışmalar Koordinatörlüğü tarafından 
+yapılacak olan tüm bilgilendirmeler takımın iletişim sorumlusu olarak belirlediği 
+kişiye yapılacaktır. Bu sebeple her takım bir iletişim sorumlusu belirlemelidir. 
+• Süreçlerin (Başvuru Yapma, Rapor Yükleme Son Tarih, İtiraz Süreci, Doldurulması 
+Gereken Form vb.) takibi iletişim sorumlusunun görevi olup iletişim 
+sorumlusundan kaynaklı gecikmeler ve/veya aksaklıklardan Turkcell ve 
+TEKNOFEST Yarışmalar Koordinatörlüğü sorumlu değildir. 
+• Başvuru tarihleri arasında takım kaptanı/danışman sistem üzerinden kayıt olur, 
+varsa danışman ve/veya takım kaptanı, takım üyelerinin kaydını doğru ve eksiksiz 
+olarak sisteme yapar ve varsa danışman ve üyelerin e-postalarına davet gönderir. 
+Davet gönderilen üye/danışman başvuru sistemine giriş yaparak “Takım bilgilerim” 
+kısmından gelen daveti kabul eder ve kayıt tamamlanır. Aksi durumda kayıt 
+tamamlanmış olmaz. 
+• Takım oluşturma işlemini tamamlayan yarışmacıların projesine uygun yarışmaya 
+başvuru yapması gerekmektedir. 
+• Yarışma kapsamında gerekli tüm süreçler (Başvuru, Rapor Alımı, Rapor Sonuçları, 
+Üye ekleme/çıkarma işlemleri vb.) KYS (Kurumsal Yönetim Sistemi) sistemi 
+üzerinden yapılmaktadır. Takımların KYS sistemi üzerinden süreçlerini takip 
+etmesi gerekmektedir. 
+• Üye ekleme/çıkarma işlemleri TEKNOFEST Yarışmalar Koordinatörlüğünün 
+yarışma süreci içerisinde belirlediği bir tarihe kadar yapılmaktadır. Belirlenen 
+tarihten sonra takımlar içerisinde değişiklik yapılamayacaktır. 
+• Yarışma süreci boyunca KYS üzerinden başvuru yapma, rapor yükleme, itiraz 
+süreci, form doldurma işlemleri takım kaptanı ve/veya danışmanın yetkisi 
+dahilinde olup yarışma süreçleri bu kişiler üzerinden yönetilmektedir. 
+• Danışman çalıştığı ilgili kurumlarından alacakları eğitmenlik/akademisyenlik 
+yaptığına dair belgeyi Tasarım Raporu ile sisteme yüklemesi gerekmektedir. 
+• Takım içerisinde takım kaptanı bulunmalıdır. 
+• Danışman, takım üyesi olarak eklenmemelidir. Her takımın en fazla bir danışmanı 
+olabilir. Birden fazla danışman bulunan takımların başvuruları geçersiz 
+sayılacaktır. 
+• Danışmanın görevi; öğrencilere kendi eğitim-öğretimlerini planlayabilmeleri 
+konusunda yardımcı olmak, akademik, sosyal ve kültürel konularda yol 
+göstermek, zihinsel, sosyal ve duygusal yönleriyle öğrencinin kişiliğinin bir bütün 
+olarak gelişebilmesi için uygun ortamın hazırlanmasına yardımcı olmak vb. görev 
+ve hizmetlerdir. Danışmanının takımdaki rolü, projede ihtiyaç duyulacak akademik 
+desteği sağlayarak takım üyelerinin problemlerine çözüm üretebilmeleri için yol 
+göstermektir. 
+• Finale kalan takımlara sağlanacak ulaşım ve konaklama desteği sınırlıdır. Destek 
+verilecek kişi sayısı takım başına en fazla 3 kişi (danışman dahil) olup TEKNOFEST 
+Yarışmalar Koordinatörlüğü tarafından değişiklik yapma hakkı bulunmaktadır. 
+• Danışman final aşamasına kadar takıma destek olacağını ve final aşaması 
+süresince takımın yanında bulunacağını taahhüt eder. Yarışmacılar final 
+aşamasına danışmanı ile gelmek zorunda değildir. 
+• Yarışma süreci boyunca, yarışmacıların başvuru yaptıkları dönemdeki eğitim 
+seviyeleri dikkate alınacaktır. 
+• TEKNOFEST Yarışmalar Koordinatörlüğü festival alanında bulunacak üye sayısını 
+sınırlandırma 
+yetkisine 
+sahiptir. 
+Sınırlandırma 
+koordinatörlük tarafından bilgilendirme yapılacaktır. 
+yapılması 
+durumunda 
+• Yarışma komitesi tarafından iletilen bilgiler (5G şebeke bilgileri, video dosyaları, 
+eğitim dokümanları, soru-cevap seanslarındaki bilgilendirme içerikleri vb.) hiçbir 
+suretle üçüncü parti kişi, kurum ve kuruluşlarla paylaşılmayacaktır. Ayrıca bu 
+bilgiler yarışma dışında bir etkinlik (konferans, çalıştay, panel, seminer vb.) veya 
+yayın (akademik makale, bildiri, poster vb.) kapsamında Turkcell’den izinsiz 
+şekilde kullanılamaz. 
+Yarışmacı, başvuru yapmadan önce yarışma hakkındaki tüm açıklamaları ve katılım 
+koşullarını okuyup onaylamak suretiyle yarışmaya katılabilecektir. 
+Yarışmaya başvuranların şartnamede yer alan şartların tamamını okumuş, anlamış ve 
+kabul etmiş oldukları sayılmaktadır. 
+4. YARIŞMA DETAYLARI 
+4.1. Yarışma Sırasında Kullanılacak Yazılım veya Donanımlar 
+Final yarışmaya davet edilen takımlar, yarışma sırasında geliştirdikleri uygulamayı kendi 
+bilgisayarlarında çalıştıracaklardır. Takımların yarışma özelinde ihtiyaç duyduğu bir 
+donanım olmamakla beraber yazılım tarafında istedikleri programları ve programlama 
+dillerini kullanabilirler. 
+Number Verification (Numara Doğrulama) API 
+Geleneksel mobil uygulama güvenliğinde, kullanıcının telefon numarasını doğrulamak 
+için genellikle SMS üzerinden gelen tek seferlik şifreler (OTP) kullanılır. Ancak bu yöntem, 
+kullanıcı deneyimini kesintiye uğratmakta ve bazı güvenlik açıklarına (sosyal mühendislik 
+vb.) neden olabilmektedir. 
+Number Verification API, kullanıcı etkileşimine gerek kalmadan, doğrudan mobil şebeke 
+üzerinden doğrulama yapılmasına olanak tanıyan yeni nesil bir kimlik doğrulama 
+mekanizmasıdır. Uygulama, kullanıcının o an kullandığı cihazın içinde takılı olan SIM 
+kartın, beyan edilen telefon numarasıyla eşleşip eşleşmediğini şebekeye sorar. Çekirdek 
+şebeke, veri bağlantısı üzerinden bu eşleşmeyi arka planda doğrular ve uygulamaya 
+"Doğru" veya "Yanlış" cevabını döner. 
+Number Verification doğrulaması mobil şebeke veri bağlantısı üzerinden 
+gerçekleştirileceğinden, final yarışma ortamında ilgili cihaz/hat erişimi Turkcell 
+tarafından sağlanacak ve test edilecektir. Yarışma senaryosunun ilk adımında, sisteme 
+giriş 
+yapan kullanıcının (veya araç sisteminin) doğrulanması gerekmektedir. 
+Yarışmacıların, SMS bekleme süresi veya manuel kod girişi gibi adımları ortadan 
+kaldırarak, şebeke tabanlı, güvenli ve "sessiz" bir doğrulama süreci tasarlamaları 
+beklenmektedir. 
+Quality on Demand (Talep Üzerine Kalite) API 
+Standart internet kullanımında şebeke, tüm kullanıcılara "Best Effort" (Eldeki En İyi Çaba) 
+prensibiyle hizmet verir. Yani şebeke yoğun olduğunda veri hızı düşebilir veya gecikme 
+artabilir. Ancak otonom ve bağlantılı sürüş, uzaktan cerrahi operasyon veya gerçek 
+zamanlı yapay zekâ analitiği gibi kritik uygulamalar, stabil ve garanti edilmiş bir bağlantı 
+kalitesine ihtiyaç duyar. 
+Quality on Demand API, geliştiricilerin kritik anlarda şebekeden özel bir hizmet kalitesi 
+(QoS, Quality of Service) talep etmesini sağlayan programlanabilir bir arayüzdür. Bu API 
+sayesinde uygulama, şebekeye "Şu anda kritik bir işlem yapıyorum, benim veri akışıma 
+öncelik ver, gecikmeyi sabitle veya bant genişliğimi artır" komutunu gönderebilir. Şebeke, 
+bu talebi değerlendirir ve ilgili veri oturumu için kaynakları dinamik olarak tahsis eder. 
+Yarışma senaryosunda, yol kenarındaki kamera görüntüleri normal şartlarda standart 
+kalitede iletilirken; yapay zekâ bir "kritik durum" (Ör: TOGG aracının yaklaşması, plaka 
+okuma ihtiyacı, sürücü davranışı tespiti vb.) tespit ettiğinde, analiz doğruluğunu artırmak 
+için Quality on Demand API tetiklenecektir. 
+Amaç, 5G'nin sunduğu düşük gecikme ve yüksek bant genişliği yeteneklerinin, sadece 
+sürekli açık bir musluk gibi değil; ihtiyaca göre açılıp kapanabilen akıllı bir kaynak olarak 
+nasıl kullanılabileceğini göstermektir. Yarışmacılar, şebeke kalitesi arttığında yapay zekâ 
+analiz sonuçlarındaki (araç tespiti, nesne tanıma, plaka okuma, risk unsuru algılama vb.) 
+başarım artışını bu API kullanımı ile kanıtlayacaklardır. 
+4.2. Yarışma Aşamaları 
+Yarışma, temelde 3 aşamadan oluşmaktadır: 
+1. Birinci aşamada, yarışmacılar yapay zeka yetkinliklerini kullanacaklardır. Bu 
+aşamada yarışmacı takımlar tarafından test veri seti (çevrimdışı video 
+dosyaları, videodaki araca ait gerçek bilgiler) üzerinden belirlenen hedefleri 
+tespit edebilecek yapay zeka modelinin oluşturulması ve ön tasarım raporu 
+halinde sunulması ile tamamlanır. Yarışma komitesi tarafından bu raporlar 
+teknik değerlendirmeye tabi tutulur. Bu aşamada belirli seviyede hedef tespiti 
+ve doğruluğuna ilişkin başarı ölçütlerini sağlayan takımlar bir sonraki aşamaya 
+geçmeye hak kazanır. 
+2. İkinci aşamada, yarışmacılar yapay zeka yetkinliklerine ilave olarak Mobil 
+Uygulama Geliştirme ve 5G ağ API yetkinliklerini kullanacaklardır. Bu aşamada 
+ön tasarım raporu ve yarışmanın ilerleyen süreci hakkında takımlarla soru
+cevap ve eğitim seansları düzenlenir. Bu seanslarda yarışmacılara, 
+geliştirmeleri beklenen Mobil Uygulama ve kullanacakları Network API’ler 
+hakkında detaylı bilgi verilir. Bu oturumda aynı zamanda takımlara raporlarıyla 
+ilgili geri bildirimler verilir. Bu aşama neticesinde takımlardan final tasarım 
+raporlarını iletmeleri istenir. Yarışma komitesinin rapor değerlendirmeleri 
+sonrası   
+final   
+yarışmaya   
+hak   
+kazanan   
+takımlar   
+açıklanır. 
+3. Son aşama, aynı zamanda yarışmanın final etabı olacaktır. Finale katılmaya 
+hak kazanan takımlar, yarışma günü final tasarım raporlarının öncelikle kısa 
+sunumunu yaparak izledikleri yöntemi anlatacaklar, sonrasında yarışma 
+etabına geçeceklerdir. Final etabı esnasında takımlar geliştirdikleri mobil 
+uygulamayı kendi telefonlarında çalıştırıp 5G şebekesine ve 5G ağ API uç 
+noktalarına bağlanıp; 
+a. İlgili API’ları kullanarak canlı kamera görüntüsünü elde edecek, elde 
+edilen görüntüleri geliştirdikleri modeli kullanarak işleyip tespit edilen 
+verileri yarışma komitesiyle paylaşacaktır. 
+b. Tespit edilen veriler, takımlarca geliştirilen mobil uygulama ekranında 
+gösterilecektir. 
+Final aşaması neticesinde ekiplerin tespit ettikleri hedefler yarışma komitesi 
+tarafından doğruluk, hassasiyet ve model hızı gibi parametreler dikkate alınarak 
+değerlendirilecektir. 
+4.3. Eğitim, Test ve Yarışma Verileri 
+Yarışma komitesi, birinci aşamada örnek (çevrimdışı) kamera görüntülerine ek olarak, 
+görüntülerdeki araçların plaka, gerçek hız, araç içi nesne gibi verileri yarışmacılarla 
+paylaşacaktır. Ayrıca ön tasarım raporu teslimi öncesinde yarışmacılarla soru-cevap ve 
+bilgilendirme toplantısı yapılacaktır. Yarışmanın ikinci aşamasında, ön tasarım raporu 
+değerlendirmesi olumlu sonuçlanan ekiplerle tekrar bilgilendirme / soru-cevap toplantısı 
+ve 5G ağ API’ları üzerine kısa bir eğitim seansı gerçekleştirilecektir. 
+4.4. Hedef / Nesne Tespiti 
+Yarışma kapsamında geliştirilen uygulamanın yapay zeka modelini kullanarak; araç 
+plakası, araç içi nesneler, sürücünün yorgunluk durumu, sigara veya telefon kullanımı gibi 
+yol güvenliğini tehdit edebilecek sürücü davranışları ve unsurları tespit etmesi 
+beklenmektedir. 
+4.5. Yarışma Kuralları 
+Takımlar, uygulamanın raporladığı her hedefin otomatik analiz sonucu üretildiğini 
+kanıtlamakla yükümlüdür. Kanıtlanamayan hedefler değerlendirmeye alınmaz. İspat 
+edemedikleri hedefleri tespit etmiş sayılmazlar. Hedef sınıfları ve zorluk katsayıları final 
+yarışma öncesi ilan edilecektir. Finalist takımlar tespit ettikleri hedeflerin zorluklarına 
+göre puanlandırılacaktır. 
+5. PUANLANDIRMA 
+Yarışmacı takımların final aşamasına gelinceye kadar geliştirdiği uygulama, aşağıdaki 
+tabloda yer alan başarı ölçütlerine göre değerlendirilir. Bu değerlendirme kapsamında, 
+belirlenen kriterlerin aldığı puanlar tablodaki ağırlıklarına göre hesaplanarak 
+puanlandırma yapılır. 
+KRİTER 
+Yapay zekâ analizinin (araç, plaka, gerçek hız, araç içi nesne 
+tanıma) doğruluk ve hassasiyeti 
+AĞIRLIK 
+%40 
+5G ağ API’leriyle uygulama entegrasyonu (Quality on Demand 
+API’si ile) yalnızca ihtiyaç varken bant genişliğinin yükseltilmesi 
+%40 
+Final tasarım raporu ve sunumu (yazılım mimarisinin ve geliştirme 
+metotlarının modern pratikleri takip etmesi) 
+%20 
+Toplam 
+%100 
+Tablo 1. Final Puanlandırma Tablosu 
+6. YARIŞMA TAKVİMİ VE DEĞERLENDİRME 
+TARİH 
+AÇIKLAMA 
+28.02.2026 
+Yarışma Son Başvuru Tarihi 
+27.03.2026 
+Test Veri Setinin Takımlarla Paylaşımı 
+10.04.2026 
+Bilgilendirme ve Soru-Cevap Seansı 
+24.04.2026 – 17:00 
+Ön Tasarım Raporunun Son Teslim Tarihi 
+01.06.2026 
+Ön Tasarım Raporu Değerlendirme Sonuçlarının Açıklanması 
+09.06.2026 
+Takımlarla Soru-Cevap ve Geribildirim Toplantısı 
+14.06.2026 – 17:00 Final Tasarım Raporunun Son Teslim Tarihi 
+31.07.2026 
+Final Yarışmaya Katılacak Takımların Açıklanması 
+Ağustos – Eylül 2026 Final Yarışması 
+30 Eylül – 4 Ekim 
+2026 
+TEKNOFEST Şanlıurfa 
+Tablo 2. Yarışma Takvimi 
+6.1. Başvuru 
+Yarışma başvuruları 28 Şubat 2026 tarihine kadar TEKNOFEST Havacılık, Uzay ve 
+Teknoloji Festivali resmi web sitesi üzerinden (www.TEKNOFEST.org) yapılacak olup 
+başvurular takımlar şeklinde kabul edilecektir. Yarışma takımları en az 2, en fazla 5 kişi 
+olacaktır. Takımlar isterlerse bir danışman (Öğretim Üyesi veya Araştırma Görevlisi) 
+bulundurabilecektir. 
+6.2. Bilgilendirme Seansı 
+Yarışma başvuruları 28 Şubat 2026 tarihinde tamamlandıktan sonra takımlar ile soru
+cevap ve bilgilendirme toplantısı çevrimiçi şekilde yapılacaktır. Hem yarışma içeriği hem 
+de beklentiler Turkcell Yarışma Komitesi tarafından net olarak ifade edilecektir. 
+Yarışmacılara, toplantı tarihinde değişiklik olması durumunda ve toplantı platformu 
+hakkında bilgilendirme yapılacaktır. 
+6.3. Ön Tasarım Raporu 
+Takımlar geliştirmeyi düşündükleri sistem ve algoritmayı içeren tasarım raporunu, işbu 
+şartnamede belirtilen tarihe kadar yarışma komisyonuna göndermelidirler. 
+Yarışmacıların hazırlamaları gereken rapora ilişkin şablon ve önemli hatırlatmalar 
+ilerleyen tarihte TEKNOFEST web sitesi üzerinden paylaşılacaktır. Gönderilen bu raporlar 
+yarışma komisyonu tarafından incelenecek ve ikinci aşamaya geçmeye hak kazanan 
+takımlar duyurulacaktır. 
+Rapor teslimi işbu şartnamenin yarışma takviminde belirtilen gün içerisinde saat 17:00’a 
+kadar KYS sistemi üzerinden yüklenmesi gerekmektedir. İtiraz süreci TEKNOFEST 
+Yarışmalar Komitesi tarafından sonuçların açıklanmasının ardından gönderilen e-posta 
+ile takımlara bildirilmektedir. Takvim ve saatlerde TEKNOFEST Yarışmalar Komitesi 
+tarafından değişiklik yapma hakkı bulunmaktadır. 
+6.4. Ön Tasarım Raporunun Değerlendirilmesi, Sonuçların Duyurulması 
+Ön tasarım raporları değerlendirmeye alınacak ve eleme sonuçları açıklanacaktır. İşbu 
+şartnamenin puanlandırma kısmında açıklanan kriterlere göre değerlendirilecektir. Ön 
+tasarım aşamasını geçen adaylar yarışmanın final tasarım raporunu teslim 
+edebileceklerdir. Yalnızca final tasarım raporu başarılı olarak değerlendirilen takımlar 
+yarışmanın final aşamasına katılabilecektir. 
+6.5. Takımlarla Soru-Cevap ve Geribildirim Toplantısı 
+Ön tasarım aşamasını geçen yarışmacılar ile final tasarım raporu ile final etabı hakkında 
+soruları cevaplamak amacı ile soru-cevap toplantısı yapılacaktır. Bu aşamada, ilk 
+tasarım raporları hakkında verilecek geribildirimlerden sonra takımların final tasarım 
+raporu hazırlaması istenecektir. Yarışmacılara, toplantı tarihinde değişiklik olması 
+durumunda ve toplantı ortamı hakkında bilgilendirme yapılacaktır. 
+6.6. Final Tasarım Raporlarının Değerlendirilmesi ve Final Yarışma Takımlarının 
+Duyurulması 
+Final yarışmaya kalacak takımlar final tasarım raporlarının teslim edilmesinden sonra 
+yarışma komitesi tarafından kararlaştırılacaktır. Final yarışmaya hak kazanan takımlar 
+ilan edilecek ve finale davet edilecektir. 
+Final tasarım raporunda, yarışmacı takımlar tarafından geliştirilen algoritmalar test veri 
+seti kullanılarak doğruluk analizine tabi tutulacaktır. Değerlendirme kriterlerine göre 
+belirlenecek eşik değerini geçecek ya da yaklaşacak ekipler final aşamasına geçecektir. 
+6.7. Final Yarışma 
+Yarışmacı takımlar, yarışma günü yarışma başlamadan önce yarışma alanında 
+sistemlerini kuracaklar ve hazırlıklarını yapacaklardır. Takımlar, final tasarım raporlarının 
+öncelikle kısa sunumunu yaparak izledikleri yöntemi anlatacaklar, sonrasında yarışma 
+etabına geçeceklerdir. 
+Finale kalan tüm takımlar için yarışma oturumu aynı anda başlayacaktır. Takımlar, takım 
+kaptanı aracılığıyla iletişim kuracak, sonuçları da yine bu yolla ileteceklerdir. 
+Final yarışmanın yeri ve kesin tarihleri takımlara TEKNOFEST platformu üzerinden 
+duyurulacaktır. 
+6.8. TEKNOFEST Şanlıurfa 
+Final yarışma aşaması tamamlandıktan sonra nihai sonuçlar yarışma komitesi tarafından 
+duyurulacaktır. Dereceye giren (ilk 3 takım) takımlar ödül törenine katılacak ve işbu 
+şartnamenin 7. bölümünde belirtilen ödüller TEKNOFEST Şanlıurfa’da takdim edilecektir. 
+7. ÖDÜLLER 
+Aşağıdaki tabloda belirtilen ödüller, ödül almaya hak kazanan takımlara verilecek toplam 
+tutarı göstermektedir, bireysel ödüllendirme yapılmayacaktır. Birincilik, ikincilik ve 
+üçüncülük ödülleri, takım üyeleri toplam sayısına (danışman hariç) göre eşit miktarda 
+bölünerek her öğrencinin belirteceği banka hesabına yatırılacaktır. Ödül almaya hak 
+kazanan takım danışmanları aşağıdaki birincilik, ikincilik, üçüncülük ödül tutarlarından 
+faydalanamaz, danışmanlara verilecek ödüller aşağıdaki tabloda ayrıca belirtilmiştir. 
+DERECELER 
+ÖDÜL MİKTARI 
+Birincilik Ödülü 
+175.000 ₺ 
+DANIŞMAN 
+İkincilik Ödülü 
+15.000 ₺ 
+150.000 ₺ 
+Üçüncülük Ödülü 
+12.000 ₺ 
+125.000 ₺ 
+Tablo 3. Ödüller Tablosu 
+10.000 ₺ 
+Takımlar, final yarışma oturumunda gösterecekleri performansa göre ödül kazanacaktır. 
+Yarışma detaylarında açıklandığı üzere, yarışma adımlarını en doğru ve en başarılı şekilde 
+tamamlayan takım yarışmada 1. olarak derece alacaktır. 
+Yarışma neticesinde tabloda belirtilen derece ödüllerine ek olarak, prestij ödülleri de 
+takdim edilecektir. Bunlar; En İyi Uygulama Mimarisi, En İyi Sunum ve Turkcell Özel Ödülü 
+olarak takımlara sunulacaktır. 
+En İyi Uygulama Mimarisi Ödülü 
+Rapor aşamaları ile birlikte yarışma komitesi tarafından yazılım/algoritma 
+değerlendirmeleri yapılacaktır. Yarışmacılar içerisinde, modern yazılım geliştirme 
+prensiplerine en iyi şekilde uyum sağlayan; yazılım hayat döngüsü, proje özgünlüğü, 
+yazılım mimari tasarımı ve uygulanması açısından güncel pratikleri takip ettiği görülen 
+takımlara verilen ödüldür. Takım olarak bu belirtilen kriterlere bakılarak değerlendirme 
+yapılacaktır. 
+Belirtilen ödül prestij amaçlı olup bir maddi karşılığı bulunmamaktadır. 
+En İyi Sunum Ödülü 
+Yarışma alanında üstlenilen görevlerini ve alandaki iş planlarını en iyi şekilde 
+sonuçlandırmayı hedefleyen takımlara, bu amaçta derece elde edip edilmemesine 
+bakılmaksızın; sorulara verilen doğru cevaplar, beden dili, dinleyicilere karşı tutum, 
+sunumun içeriği, akıcılığı, final tasarım raporunu açıklayıcılığı gibi kriterleri en iyi şekilde 
+yansıtan takımlara verilen ödüldür. Takım olarak bu belirtilen kriterlere bakılarak 
+değerlendirme yapılacaktır. 
+Belirtilen ödül prestij amaçlı olup bir maddi karşılığı bulunmamaktadır. 
+Turkcell Özel Ödülü 
+Yarışma alanında, belirlenen hedef noktaları ya da unsurları doğru ve hızlı şekilde tespit 
+eden ancak derecede yer almayan takıma takdim edilecek ödüldür. Final etabında elde 
+edilen toplam puanlara göre sıralama yapılarak bu takım belirlenecektir. 
+Belirtilen ödül prestij amaçlı olup bir maddi karşılığı bulunmamaktadır. 
+8. GENEL KURALLAR 
+Yarışma kapsamında geçerli olan Genel Kurallar kitapçığına ulaşmak için tıklayınız. 
+9. ETİK KURALLAR 
+Yarışma kapsamında geçerli olan Etik Kurallar kitapçığına ulaşmak için tıklayınız. 
+SORUMLULUK BEYANI 
+Turkcell, T3 Vakfı ve TEKNOFEST, yarışmacıların teslim etmiş olduğu herhangi bir üründen 
+veya yarışmacıdan kaynaklanan herhangi bir yaralanma veya hasardan hiçbir şekilde 
+sorumlu değildir. Yarışmacıların 3. kişilere verdiği zararlardan T3 Vakfı ve organizasyon 
+yetkilileri sorumlu değildir. Turkcell, T3 Vakfı ve TEKNOFEST, takımların kendi sistemlerini 
+Türkiye Cumhuriyeti yasaları çerçevesinde hazırlamalarını ve uygulamalarını 
+sağlamaktan sorumlu değildir. 
+Turkcell ve Türkiye Teknoloji Takımı Vakfı işbu şartnamede her türlü değişiklik yapma 
+hakkını saklı tutar. 
