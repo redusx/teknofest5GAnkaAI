@@ -89,26 +89,47 @@ valid_colors:
 # ==============================================================================
 
 source_mappings:
-  # --- Ornek: Kaggle veri seti ---
-  kaggle_driver_distraction:
-    0: 13   # "safe_driving" -> etrafa_bakinma (ornek)
-    1: 11   # "texting_right" -> telefonla_konusma
-    2: 11   # "texting_left" -> telefonla_konusma
-    3: 11   # "talking_right" -> telefonla_konusma
-    4: 11   # "talking_left" -> telefonla_konusma
-    5: 8    # "operating_radio" -> esneme (ornek - gercek eslemeyi siz belirleyeceksiniz)
-    6: 10   # "drinking" -> su_icme
-    7: 7    # "reaching_behind" -> arkaya_bakma
-    8: 9    # "hair_makeup" -> sigara_icme (ornek - gercek eslemeyi siz belirleyeceksiniz)
-    9: 13   # "talking_passenger" -> etrafa_bakinma
+  # --- Cars_Body_Type (klasor bazli siniflandirma → YOLO detection) ---
+  # Coupe ve Convertible kilavuzda tanimli degil, sedan altinda birlestirild.
+  cars_body_type:
+    Sedan: 0        # sedan
+    SUV: 1          # suv
+    Hatchback: 2    # hatchback
+    "Pick-Up": 3    # pickup
+    VAN: 5          # panelvan
+    Coupe: 0        # sedan (kilavuzda coupe yok)
+    Convertible: 0  # sedan (kilavuzda convertible yok)
 
-  # --- Ornek: Roboflow veri seti ---
-  roboflow_vehicle_detection:
-    0: 0    # "car" -> sedan
-    1: 1    # "suv" -> suv
-    2: 6    # "truck" -> kamyon
-    3: 4    # "bus" -> minibus
-    4: 20   # "license_plate" -> plaka
+  # --- vehicles.v2-release (Roboflow RF100) ---
+  # Sadece small/big bus ve small/big truck kullanildi.
+  # Diger siniflar (car, mid truck, bus-l-, bus-s-, truck-l/m/s/xl) atildi.
+  vehicles_v2:
+    0: 4    # "big bus"     -> minibus
+    1: 6    # "big truck"   -> kamyon
+    6: 4    # "small bus"   -> minibus
+    7: 6    # "small truck" -> kamyon
+
+  # --- plateRecognition (YOLO detection, tek sinif) ---
+  plate_recognition:
+    0: 20   # "plaka" -> plaka (Class 20)
+
+  # --- colorRecognition (YOLO classification, 9 gecerli renk) ---
+  # pink ve purple kilavuzda tanimli degil, cikarildi.
+  # silver->gri, tan/beige->kahverengi, gold->sari olarak birlestirildi.
+  color_recognition:
+    black: "siyah"
+    white: "beyaz"
+    grey: "gri"
+    silver: "gri"
+    red: "kirmizi"
+    blue: "mavi"
+    yellow: "sari"
+    gold: "sari"
+    green: "yesil"
+    orange: "turuncu"
+    brown: "kahverengi"
+    tan: "kahverengi"
+    beige: "kahverengi"
 
   # --- Yeni kaynak eklemek icin bu sablonu kullanin ---
   # yeni_kaynak_adi:
