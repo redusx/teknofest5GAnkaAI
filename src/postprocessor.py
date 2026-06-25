@@ -114,27 +114,17 @@ class PostProcessor:
         type_votes: Dict[str, List[float]],
         color_votes: Dict[str, List[float]],
         plate_detections: List[tuple],
+        bbox_aspect_ratio: float = 1.5,
     ) -> Dict[str, Any]:
         """
         Video boyunca biriktirilen arac tespitlerinden nihai bilgiyi uretir.
 
-        Arac tipi ve renk icin cogunluk oyu (majority voting) kullanilir.
-        Genel confidence_score icin Zaman-Agirlikli Medyan hesaplanir.
-
-        Args:
-            type_votes: {arac_tipi: [confidence_listesi]} esleme tablosu.
-            color_votes: {renk: [confidence_listesi]} esleme tablosu.
-            plate_detections: [(plaka_metni, confidence)] listesi.
-
-        Returns:
-            Yarisma formatinda arac_bilgisi sozlugu:
-            {
-                "tip": "sedan",
-                "plaka": "34ABC123",
-                "renk": "beyaz",
-                "confidence_score": 0.94
-            }
+        Arac tipi icin en-boy orani evristigi destekli cogunluk oyu,
+        Renk icin Parlaklik Agirlikli Oylama (Luminance-Weighted Voting),
+        Plaka icin Zamansal Konsensus Oylama (Temporal Consensus Voting) kullanilir.
         """
+        import re
+
         result = {
             "tip": "sedan",
             "plaka": "tespit edilemedi",
@@ -144,32 +134,59 @@ class PostProcessor:
 
         all_confidences: List[float] = []
 
-        # --- Arac Tipi: En cok oy alan tip ---
+        # --- Arac Tipi: En-Boy Orani Evristigi + Cogunluk Oyu ---
         if type_votes:
-            best_type = max(
-                type_votes, key=lambda t: len(type_votes[t])
-            )
+            best_type = max(type_votes, key=lambda t: len(type_votes[t]))
             conf_list = type_votes[best_type]
-            # Zaman-Agirlikli Medyan (outlier'ları dışlar)
             median_conf = float(np.median(conf_list))
+
+            # FTR Mimarisi §Aspect-Ratio Heuristics (Tepe kamerasi SUV tavan basikligi uyarisi)
+            if best_type == "sedan" and bbox_aspect_ratio < 1.45:
+                alt_candidates = [t for t in ["suv", "minibus", "panelvan", "pickup"] if t in type_votes]
+                if alt_candidates:
+                    best_type = max(alt_candidates, key=lambda t: len(type_votes[t]))
+                    logger.info(f"[PostProcessor] Aspect-ratio evristigi (w/h={bbox_aspect_ratio:.2f} < 1.45) ile Sedan -> {best_type} secildi.")
+
             result["tip"] = sanitize_label(best_type)
             all_confidences.append(median_conf)
 
-        # --- Renk: En cok oy alan renk ---
+        # --- Renk: Parlaklik Agirlikli Oylama (Luminance-Weighted Voting) ---
         if color_votes:
-            best_color = max(
-                color_votes, key=lambda c: len(color_votes[c])
-            )
+            # Her renk icin toplam agirlik skoru
+            color_scores = {c: sum(scores) for c, scores in color_votes.items()}
+            best_color = max(color_scores, key=lambda c: color_scores[c])
             conf_list = color_votes[best_color]
             median_conf = float(np.median(conf_list))
             result["renk"] = sanitize_label(best_color)
             all_confidences.append(median_conf)
+            logger.debug(f"[PostProcessor] Renk skoru: {best_color} (toplam agirlik: {color_scores[best_color]:.2f})")
 
-        # --- Plaka: En yuksek confidence'li tespit ---
+        # --- Plaka: Zamansal Konsensus Oylama (Temporal Consensus OCR) ---
         if plate_detections:
-            best_plate = max(plate_detections, key=lambda x: x[1])
-            result["plaka"] = validate_plate(best_plate[0])
-            all_confidences.append(best_plate[1])
+            cleaned_pool = []
+            for text, conf in plate_detections:
+                clean_text = re.sub(r'[^A-Z0-9]', '', str(text).upper())
+                if len(clean_text) >= 2:
+                    cleaned_pool.append((clean_text, float(conf)))
+
+            if cleaned_pool:
+                # >= 6 karakterli okumalara oncelik ver (eksik plaka kirpintilarini ele)
+                long_plates = [p for p in cleaned_pool if len(p[0]) >= 6]
+                active_pool = long_plates if long_plates else cleaned_pool
+
+                plate_votes = {}
+                for text, conf in active_pool:
+                    plate_votes[text] = plate_votes.get(text, 0.0) + conf
+
+                best_plate_raw = max(plate_votes, key=lambda p: plate_votes[p])
+                best_plate_conf = min(1.0, plate_votes[best_plate_raw] / max(1, len(active_pool)))
+
+                result["plaka"] = validate_plate(best_plate_raw)
+                all_confidences.append(best_plate_conf)
+            else:
+                best_plate = max(plate_detections, key=lambda x: x[1])
+                result["plaka"] = validate_plate(best_plate[0])
+                all_confidences.append(float(best_plate[1]))
 
         # --- Genel confidence_score ---
         if all_confidences:

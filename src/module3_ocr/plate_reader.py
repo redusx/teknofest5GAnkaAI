@@ -66,20 +66,17 @@ class PlateReader:
         # --- Fast-Plate-OCR (Tercih edilen) ---
         if self.ocr_backend in ("fast_plate_ocr", "auto"):
             try:
-                from fast_plate_ocr import ONNXPlateRecognizer
+                from fast_plate_ocr import LicensePlateRecognizer
 
-                self.ocr_engine = ONNXPlateRecognizer("argentinian-plates-cct-v2")
+                self.ocr_engine = LicensePlateRecognizer("cct-s-v2-global-model")
                 self.ocr_backend = "fast_plate_ocr"
                 logger.info("[Modul 3] Fast-Plate-OCR baslatildi.")
                 return
-            except ImportError:
+            except Exception as e:
                 if self.ocr_backend == "fast_plate_ocr":
-                    logger.error(
-                        "[Modul 3] fast-plate-ocr paketi bulunamadi. "
-                        "pip install fast-plate-ocr"
-                    )
+                    logger.error(f"[Modul 3] fast-plate-ocr baslatilamadı: {e}")
                     return
-                logger.debug("[Modul 3] fast-plate-ocr bulunamadi, diger yontemler deneniyor...")
+                logger.debug(f"[Modul 3] fast-plate-ocr baslatilamadı ({e}), diger yontemler deneniyor...")
 
         # --- EasyOCR (Yedek) ---
         if self.ocr_backend in ("easyocr", "auto"):
@@ -130,14 +127,16 @@ class PlateReader:
             return None
 
         try:
-            # On isleme
-            processed = self._preprocess(plate_crop)
+            # Fast-Plate-OCR kendi on-islemesini yapar (BGR/RGB 3 kanal bekler)
+            if self.ocr_backend == "fast_plate_ocr":
+                input_img = plate_crop
+            else:
+                input_img = self._preprocess(plate_crop)
 
             # OCR
-            raw_text = self._run_ocr(processed)
+            raw_text = self._run_ocr(input_img)
 
             if raw_text:
-                # Regex dogrulama ve normalizasyon
                 validated = validate_plate(raw_text)
                 logger.debug(f"[Modul 3] Plaka: '{raw_text}' -> '{validated}'")
                 return validated
@@ -217,7 +216,7 @@ class PlateReader:
                 # Fast-Plate-OCR
                 result = self.ocr_engine.run(processed_image)
                 if result and len(result) > 0:
-                    return str(result[0]).strip()
+                    return str(result[0].plate).strip()
 
             elif self.ocr_backend == "easyocr":
                 # EasyOCR

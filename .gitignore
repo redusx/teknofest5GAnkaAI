@@ -1,0 +1,28 @@
+# Python & Bytecode
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Environments & IDE
+.env
+.venv
+env/
+venv/
+.idea/
+.vscode/
+
+# Datasets & Weights
+datasets/
+models/*.pt
+models/*.onnx
+models/*.engine
+*.pt
+*.onnx
+*.engine
+
+# Test & Training Outputs
+output/
+runs/
+test_videos/
+.cache/
