@@ -112,6 +112,7 @@ class CabinAnalyzer:
 
         # Tespit biriktirici
         self._detections: List[Dict[str, Any]] = []
+        self.person_detector = None
 
         if model_path:
             self.load_model(model_path, device)
@@ -214,7 +215,70 @@ class CabinAnalyzer:
         except Exception as e:
             logger.warning(f"[Modul 2] Kare islenirken hata: {e}")
 
+        # Geometrik Sabit ROI Tabanlı Yolcu Tarama Kuralı (FTR §Tablo2)
+        target_img = full_frame if full_frame is not None else windshield_crop
+        p_dets = self.detect_passengers_roi(target_img, frame_time)
+        frame_detections.extend(p_dets)
+
         return frame_detections
+
+    # ==================================================================
+    # Geometrik ROI Yolcu Saptayıcı (YOLOv11n Fallback)
+    # ==================================================================
+    def detect_passengers_roi(
+        self, image: Any, frame_time: float
+    ) -> List[Dict[str, Any]]:
+        """
+        Kabin içi sabit koltuk koordinatlarını tarayarak kişi varlığına göre etiket üretir.
+          Sağ Üst ROI -> on_koltuk (19)
+          Sol Alt ROI -> arka_koltuk_1 (17)
+          Sağ Alt ROI -> arka_koltuk_2 (18)
+        """
+        results: List[Dict[str, Any]] = []
+        if image is None or image.size == 0:
+            return results
+
+        if self.person_detector is None:
+            try:
+                from ultralytics import YOLO
+                self.person_detector = YOLO("yolo11n.pt")
+            except Exception:
+                return results
+
+        try:
+            h, w = image.shape[:2]
+            preds = self.person_detector.predict(image, conf=0.35, verbose=False)
+            if not preds or not preds[0].boxes:
+                return results
+
+            for box in preds[0].boxes:
+                if int(box.cls[0]) != 0:
+                    continue
+                conf = float(box.conf[0])
+                bx1, by1, bx2, by2 = map(int, box.xyxy[0])
+                cx, cy = (bx1 + bx2) / (2.0 * w), (by1 + by2) / (2.0 * h)
+
+                seat = None
+                if cx > 0.48 and cy < 0.65:
+                    seat = "on_koltuk"
+                elif cx < 0.50 and cy >= 0.50:
+                    seat = "arka_koltuk_1"
+                elif cx >= 0.50 and cy >= 0.50:
+                    seat = "arka_koltuk_2"
+
+                if seat:
+                    det = {
+                        "zaman_saniye": round(frame_time, 2),
+                        "kategori": "yolcular",
+                        "etiket": sanitize_label(seat),
+                        "confidence_score": clamp_confidence(conf),
+                    }
+                    results.append(det)
+                    self._detections.append(det)
+        except Exception:
+            pass
+
+        return results
 
     def analyze_with_shared_results(
         self,

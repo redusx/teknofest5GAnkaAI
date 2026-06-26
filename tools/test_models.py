@@ -71,6 +71,18 @@ def clean_memory():
         pass
 
 
+def compute_iou(box1, box2):
+    x1 = max(box1[0], box2[0])
+    y1 = max(box1[1], box2[1])
+    x2 = min(box1[2], box2[2])
+    y2 = min(box1[3], box2[3])
+    inter = max(0, x2 - x1) * max(0, y2 - y1)
+    area1 = max(1, box1[2] - box1[0]) * max(1, box1[3] - box1[1])
+    area2 = max(1, box2[2] - box2[0]) * max(1, box2[3] - box2[1])
+    union = area1 + area2 - inter
+    return inter / union if union > 0 else 0.0
+
+
 def process_video(video_path: str, visualize: bool = False):
     """Tek bir video uzerinde tam kaskat cikarim yapar."""
     from ultralytics import YOLO
@@ -110,6 +122,17 @@ def process_video(video_path: str, visualize: bool = False):
     else:
         logger.warning("Renk modeli bulunamadi, HSV fallback kullanilacak.")
 
+    cabin_model = None
+    cab_model_path = MODELS_DIR / "cabin_yolo.pt"
+    if cab_model_path.exists():
+        logger.info(f"Kabin modeli: {cab_model_path}")
+        cabin_model = YOLO(str(cab_model_path))
+
+    # ----- Modül 4: Kinematik Yörünge Takipçisi -----
+    from src.module4_trajectory.tracker import TrajectoryTracker
+    traj_tracker = TrajectoryTracker(window_seconds=5.0)
+    person_model = YOLO("yolo11n.pt") # Yolcu ROI taranması için
+
     # ----- Fast-Plate-OCR / PlateReader -----
     from src.module3_ocr.plate_reader import PlateReader
     plate_reader = PlateReader(ocr_backend="fast_plate_ocr")
@@ -138,17 +161,13 @@ def process_video(video_path: str, visualize: bool = False):
         logger.info(f"  Gorsel cikti: {preview_path}")
 
     # ----- Cikarim Dongusu -----
-    frame_skip = 3  # Her 3. kare islenir
+    frame_skip = 2  # Her 2. kare islenir (hizli araclari kacirmamak icin)
     frame_count = 0
     processed = 0
     start_time = time.time()
 
-    # Birikimli veriler
-    type_votes = {}      # {"sedan": [0.9, 0.85, ...], ...}
-    color_votes = {}     # {"beyaz": [weighted_score, ...], ...}
-    plate_texts = []     # [("34ABC123", 0.88), ...]
-    aspect_ratios = []   # Bbox w/h oranlari (SUV vs Sedan evristigi icin)
-    all_detections = []  # Tespitler listesi
+    tracks = []          # MOT Takip havuzu
+    all_detections = []  # Yol guvenligi tespitleri
 
     while True:
         ret, frame = cap.read()
@@ -161,85 +180,201 @@ def process_video(video_path: str, visualize: bool = False):
                 writer.write(frame)
             continue
 
-        frame_time = round(frame_count / fps, 2)
-
         try:
-            # ========== MODUL 1: DETECTION ==========
+            # Dusuk esik (conf=0.08) ile hizli/blurlu sedan araclari dahi yakala
             results = det_model.predict(
-                frame, conf=0.25, iou=0.45, imgsz=640, verbose=False
+                frame, conf=0.08, iou=0.45, imgsz=640, verbose=False
             )
 
             if results and len(results) > 0:
                 pred = results[0]
                 if pred.boxes is not None:
+                    # 1. Adim: Karedeki kutulari ayristir
+                    v_boxes = [] # araclar
+                    p_boxes = [] # plakalar
+                    
                     for box in pred.boxes:
-                        cls_id = int(box.cls[0])
-                        conf = float(box.conf[0])
-                        x1, y1, x2, y2 = box.xyxy[0].cpu().numpy().astype(int)
+                        cid = int(box.cls[0])
+                        cf = float(box.conf[0])
+                        coords = box.xyxy[0].cpu().numpy().astype(int)
+                        
+                        if cid in VEHICLE_CLASS_IDS:
+                            v_boxes.append((cid, cf, coords))
+                        elif cid == PLATE_CLASS_ID:
+                            p_boxes.append((cf, coords))
+
+                    # 2. Adim: Her arac kutusu icin MOT esleme ve ozellik toplama
+                    for cid, cf, coords in v_boxes:
+                        x1, y1, x2, y2 = coords
                         box_w, box_h = max(1, x2 - x1), max(1, y2 - y1)
+                        vtype = VEHICLE_CLASS_IDS[cid]
 
-                        # --- Arac Tipi ---
-                        if cls_id in VEHICLE_CLASS_IDS:
-                            vtype = VEHICLE_CLASS_IDS[cls_id]
-                            type_votes.setdefault(vtype, []).append(conf)
-                            aspect_ratios.append(box_w / box_h)
+                        # Aktif track bul
+                        best_track = None
+                        max_iou = 0.0
+                        for t in tracks:
+                            if frame_count - t["last_seen"] > 45:
+                                continue
+                            iou = compute_iou(coords, t["bbox"])
+                            if iou > max_iou:
+                                max_iou = iou
+                                best_track = t
 
-                            # --- RENK TESPITI (Parlaklik Agirlikli) ---
-                            vx1, vy1 = max(0, x1), max(0, y1)
-                            vx2, vy2 = min(width, x2), min(height, y2)
-                            vehicle_crop = frame[vy1:vy2, vx1:vx2]
+                        if best_track is not None and max_iou > 0.25:
+                            track = best_track
+                            track["bbox"] = coords
+                            track["last_seen"] = frame_count
+                        else:
+                            track = {
+                                "id": len(tracks) + 1,
+                                "bbox": coords,
+                                "last_seen": frame_count,
+                                "type_votes": {},
+                                "color_votes": {},
+                                "plate_texts": [],
+                                "aspect_ratios": [],
+                            }
+                            tracks.append(track)
 
-                            if vehicle_crop.size > 0 and color_model is not None:
-                                cls_results = color_model.predict(
-                                    vehicle_crop, imgsz=224, verbose=False
-                                )
-                                if cls_results and len(cls_results) > 0:
-                                    cls_pred = cls_results[0]
-                                    if cls_pred.probs is not None:
-                                        top1_idx = int(cls_pred.probs.top1)
-                                        top1_conf = float(cls_pred.probs.top1conf)
-                                        color_name = cls_pred.names[top1_idx]
-                                        if color_name in VALID_COLORS:
-                                            # Luminance weighting (V ve S katsayisi)
-                                            hsv_crop = cv2.cvtColor(vehicle_crop, cv2.COLOR_BGR2HSV)
-                                            s_mean = float(np.mean(hsv_crop[:, :, 1])) / 255.0
-                                            v_mean = float(np.mean(hsv_crop[:, :, 2])) / 255.0
-                                            lum_weight = max(0.15, s_mean * v_mean)
-                                            color_votes.setdefault(color_name, []).append(top1_conf * lum_weight)
+                        track["type_votes"].setdefault(vtype, []).append(cf)
+                        track["aspect_ratios"].append(box_w / box_h)
 
-                            # Gorsel annotasyon
-                            if writer:
-                                label = f"{vtype} {conf:.2f}"
-                                cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
-                                cv2.putText(frame, label, (x1, y1 - 10),
-                                            cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
+                        # --- RENK ---
+                        vx1, vy1 = max(0, x1), max(0, y1)
+                        vx2, vy2 = min(width, x2), min(height, y2)
+                        vehicle_crop = frame[vy1:vy2, vx1:vx2]
 
-                        # --- Plaka ---
-                        elif cls_id == PLATE_CLASS_ID:
-                            if writer:
-                                cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 0, 255), 2)
-                                cv2.putText(frame, f"plaka {conf:.2f}", (x1, y1 - 10),
-                                            cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)
+                        if vehicle_crop.size > 0:
+                            detected_c = None
+                            c_conf = 0.5
+                            if color_model is not None:
+                                cls_res = color_model.predict(vehicle_crop, imgsz=224, verbose=False)
+                                if cls_res and len(cls_res) > 0 and cls_res[0].probs is not None:
+                                    tidx = int(cls_res[0].probs.top1)
+                                    tcf = float(cls_res[0].probs.top1conf)
+                                    raw_c = cls_res[0].names[tidx].lower()
+                                    en_tr = {
+                                        "black": "siyah", "white": "beyaz", "grey": "gri", "gray": "gri", 
+                                        "silver": "gri", "red": "kirmizi", "blue": "mavi", "yellow": "sari", 
+                                        "gold": "sari", "green": "yesil", "orange": "turuncu", "brown": "kahverengi", 
+                                        "tan": "kahverengi", "beige": "kahverengi"
+                                    }
+                                    mapped_c = en_tr.get(raw_c, raw_c)
+                                    if mapped_c in VALID_COLORS:
+                                        detected_c = mapped_c
+                                        c_conf = tcf
 
-                            # Fast-Plate-OCR / PlateReader cagirimi
-                            px1, py1 = max(0, x1), max(0, y1)
-                            px2, py2 = min(width, x2), min(height, y2)
-                            plate_crop = frame[py1:py2, px1:px2]
+                            # HSV Fallback (Model null dönerse veya algılayamazsa)
+                            if detected_c is None:
+                                hsv_c = cv2.cvtColor(vehicle_crop, cv2.COLOR_BGR2HSV)
+                                sm, vm = np.mean(hsv_c[:, :, 1]), np.mean(hsv_c[:, :, 2])
+                                hm = np.mean(hsv_c[:, :, 0])
+                                if sm < 40:
+                                    detected_c = "beyaz" if vm > 190 else ("siyah" if vm < 70 else "gri")
+                                else:
+                                    detected_c = "kirmizi" if (hm < 10 or hm > 170) else ("sari" if 10 <= hm < 35 else ("yesil" if 35 <= hm < 85 else ("mavi" if 85 <= hm < 135 else "turuncu")))
 
-                            if plate_crop.size > 0:
-                                plate_text = plate_reader.read(plate_crop)
-                                if plate_text and len(plate_text) >= 2:
-                                    plate_texts.append((plate_text, conf))
-                                    if writer:
-                                        cv2.putText(frame, plate_text, (x1, y2 + 20),
-                                                    cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2)
+                            if detected_c in VALID_COLORS:
+                                hsv_crop = cv2.cvtColor(vehicle_crop, cv2.COLOR_BGR2HSV)
+                                s_mean = float(np.mean(hsv_crop[:, :, 1])) / 255.0
+                                v_mean = float(np.mean(hsv_crop[:, :, 2])) / 255.0
+                                lw = max(0.15, s_mean * v_mean) if detected_c != "beyaz" else 1.0
+                                track["color_votes"].setdefault(detected_c, []).append(c_conf * lw)
+
+                        # --- KABİN / SÜRÜCÜ EYLEMİ ANALİZİ ---
+                        if cabin_model is not None:
+                            vh = max(1, y2 - y1)
+                            wy1, wy2 = y1 + int(vh * 0.15), y1 + int(vh * 0.65)
+                            w_crop = frame[max(0, wy1):min(height, wy2), max(0, x1):min(width, x2)]
+                            if w_crop.size > 0:
+                                cab_res = cabin_model.predict(w_crop, conf=0.25, verbose=False)
+                                if cab_res and len(cab_res) > 0 and cab_res[0].boxes:
+                                    act_names = {
+                                        7: "arkaya_bakma", 8: "esneme", 9: "sigara_icme",
+                                        10: "su_icme", 11: "telefonla_konusma", 13: "etrafa_bakinma",
+                                        14: "emniyet_kemeri_ihlali",
+                                    }
+                                    for cbox in cab_res[0].boxes:
+                                        acid = int(cbox.cls[0])
+                                        aconf = float(cbox.conf[0])
+                                        if acid in act_names:
+                                            aname = act_names[acid]
+                                            all_detections.append({
+                                                "zaman_saniye": round(frame_count / fps, 2),
+                                                "kategori": "sofor_eylemi",
+                                                "etiket": aname,
+                                                "confidence_score": round(aconf, 4),
+                                            })
+
+                                # Geometrik Yolcu Sabit ROI Tarama (FTR §Tablo2)
+                                p_res = person_model.predict(w_crop, conf=0.35, verbose=False)
+                                if p_res and len(p_res) > 0 and p_res[0].boxes:
+                                    ch, cw = w_crop.shape[:2]
+                                    for pbox in p_res[0].boxes:
+                                        if int(pbox.cls[0]) == 0: # person
+                                            bx1, by1, bx2, by2 = map(int, pbox.xyxy[0])
+                                            cx, cy = (bx1+bx2)/(2.0*cw), (by1+by2)/(2.0*ch)
+                                            s_lbl = "on_koltuk" if cx > 0.48 else ("arka_koltuk_1" if cy < 0.6 else "arka_koltuk_2")
+                                            all_detections.append({
+                                                "zaman_saniye": round(frame_count / fps, 2),
+                                                "kategori": "yolcular",
+                                                "etiket": s_lbl,
+                                                "confidence_score": round(float(pbox.conf[0]), 4),
+                                            })
+
+                        # --- MODÜL 4: KİNEMATİK SLALOM VE YÖRÜNGE ANALİZİ ---
+                        cur_t = frame_count / fps
+                        traj_tracker.update(vehicle_bbox=(x1, y1, x2, y2), frame_time=cur_t)
+                        if writer:
+                            traj_tracker.draw_trajectory(frame, cur_t)
+
+                        # Gorsel Annotasyon
+                        if writer:
+                            cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
+                            top_plate = track["plate_texts"][-1][0] if track["plate_texts"] else ""
+                            lbl = f"#{track['id']} {vtype} {top_plate}"
+                            cv2.putText(frame, lbl, (x1, max(20, y1 - 10)), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
+
+                    # 3. Adim: Plaka Okuma (Eskisi gibi bağımsız kesim + En yakın araca eşleme)
+                    for pcf, pcoords in p_boxes:
+                        px1, py1, px2, py2 = pcoords
+                        plate_crop = frame[max(0, py1):min(height, py2), max(0, px1):min(width, px2)]
+                        if plate_crop.size > 0:
+                            ptext = plate_reader.read(plate_crop)
+                            if ptext and len(ptext) >= 2:
+                                # En yakin aktif track bul
+                                pcx, pcy = (px1 + px2) // 2, (py1 + py2) // 2
+                                best_t = None
+                                min_d = float('inf')
+                                for t in tracks:
+                                    tx1, ty1, tx2, ty2 = t["bbox"]
+                                    tcx, tcy = (tx1 + tx2) // 2, (ty1 + ty2) // 2
+                                    d = (pcx - tcx)**2 + (pcy - tcy)**2
+                                    if d < min_d:
+                                        min_d = d
+                                        best_t = t
+                                
+                                if best_t is not None:
+                                    best_t["plate_texts"].append((ptext, pcf))
+                                else:
+                                    # Track yoksa varsayilan ana track olustur
+                                    dummy_t = {
+                                        "id": 1, "bbox": [0, 0, width, height],
+                                        "last_seen": frame_count, "type_votes": {},
+                                        "color_votes": {}, "plate_texts": [(ptext, pcf)],
+                                        "aspect_ratios": []
+                                    }
+                                    tracks.append(dummy_t)
+
+                                if writer:
+                                    cv2.rectangle(frame, (px1, py1), (px2, py2), (0, 0, 255), 2)
+                                    cv2.putText(frame, ptext, (px1, py2 + 20), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2)
 
             if writer:
                 writer.write(frame)
 
             processed += 1
 
-            # Ilerleme
             if processed % 50 == 0:
                 pct = frame_count / total_frames * 100 if total_frames > 0 else 0
                 logger.info(f"  Ilerleme: {pct:.0f}% ({frame_count}/{total_frames})")
@@ -257,24 +392,43 @@ def process_video(video_path: str, visualize: bool = False):
     elapsed = time.time() - start_time
     logger.info(f"  Cikarim tamamlandi: {processed} kare, {elapsed:.1f} sn")
 
-    # ========== SONUCLARI TOPLA (PostProcessor ile) ==========
+    # ========== SONUCLARI TOPLA (Video Geneli Oylama Havuzu) ==========
     from src.postprocessor import PostProcessor
     postprocessor = PostProcessor()
-    avg_aspect_ratio = float(np.mean(aspect_ratios)) if aspect_ratios else 1.5
 
-    vehicle_info = postprocessor.aggregate_vehicle_info(
-        type_votes, color_votes, plate_texts, bbox_aspect_ratio=avg_aspect_ratio
+    global_type_votes = {}
+    global_color_votes = {}
+    global_plate_texts = []
+    all_ars = []
+
+    for t in tracks:
+        for k, v in t["type_votes"].items():
+            global_type_votes.setdefault(k, []).extend(v)
+        for k, v in t["color_votes"].items():
+            global_color_votes.setdefault(k, []).extend(v)
+        global_plate_texts.extend(t["plate_texts"])
+        all_ars.extend(t["aspect_ratios"])
+
+    avg_ar = float(np.mean(all_ars)) if all_ars else 1.5
+    main_vehicle_info = postprocessor.aggregate_vehicle_info(
+        global_type_votes, global_color_votes, global_plate_texts, bbox_aspect_ratio=avg_ar
     )
 
-    best_type = vehicle_info.get("tip", "sedan")
-    best_color = vehicle_info.get("renk", "")
-    best_plate = vehicle_info.get("plaka", "tespit edilemedi")
-    best_conf = vehicle_info.get("confidence_score", 0.0)
+    # Kılavuza 1-1 uyum için ek keyleri temizle
+    main_vehicle_info.pop("track_id", None)
 
-    # ========== JSON CIKTI ==========
+    best_type = main_vehicle_info.get("tip", "sedan")
+    best_color = main_vehicle_info.get("renk", "")
+    best_plate = main_vehicle_info.get("plaka", "tespit edilemedi")
+    best_conf = main_vehicle_info.get("confidence_score", 0.0)
+
+    # Slalom ihlallerini ekle
+    all_detections.extend(traj_tracker.get_slalom_events())
+
+    # ========== JSON CIKTI (Kılavuza birebir) ==========
     output = {
         "video_id": video_path.name,
-        "arac_bilgisi": vehicle_info,
+        "arac_bilgisi": main_vehicle_info,
         "tespitler": all_detections,
     }
 
@@ -287,18 +441,10 @@ def process_video(video_path: str, visualize: bool = False):
     logger.info("=" * 60)
     logger.info("SONUCLAR")
     logger.info("=" * 60)
-    logger.info(f"  Arac Tipi  : {best_type} (conf: {best_conf:.4f}, {len(type_votes.get(best_type, []))} oy)")
-    logger.info(f"  Arac Rengi : {best_color} ({len(color_votes.get(best_color, []))} oy)")
+    logger.info(f"  Arac Tipi  : {best_type} (conf: {best_conf:.4f})")
+    logger.info(f"  Arac Rengi : {best_color}")
     logger.info(f"  Plaka      : {best_plate}")
     logger.info(f"  JSON       : {json_path}")
-
-    if type_votes:
-        logger.info(f"  Tip Dagilimi: {', '.join(f'{k}({len(v)})' for k, v in sorted(type_votes.items(), key=lambda x: -len(x[1])))}")
-    if color_votes:
-        logger.info(f"  Renk Dagilimi: {', '.join(f'{k}({len(v)})' for k, v in sorted(color_votes.items(), key=lambda x: -len(x[1])))}")
-    if plate_texts:
-        unique_plates = list(set(t for t, _ in plate_texts))
-        logger.info(f"  Plaka Okumalari ({len(plate_texts)}x): {', '.join(unique_plates[:5])}")
 
     logger.info("=" * 60)
     logger.info("")

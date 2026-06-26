@@ -104,12 +104,21 @@ def main():
         logger.info("")
         logger.info("Kaskat cikarim hatti tetikleniyor...")
 
+        # Modül 2 bağımsız kaskat modeli var mı kontrol et
+        has_cabin_model = any(
+            os.path.exists(os.path.join(models_dir, f"cabin_yolo{ext}"))
+            for ext in [".pt", ".onnx", ".engine"]
+        )
+        shared_mode = not has_cabin_model
+        if not shared_mode:
+            logger.info("Bağımsız Modül 2 kabin modeli bulundu, kaskat mod aktif edildi.")
+
         # Pipeline olustur
         pipeline = InferencePipeline(
             models_dir=models_dir,
             device="auto",
             use_tracker=True,
-            shared_model=True,  # Gelistirme: tek paylasimli model
+            shared_model=shared_mode,
         )
 
         # Cikarim yap

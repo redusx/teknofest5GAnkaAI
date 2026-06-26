@@ -102,7 +102,7 @@ class GlobalDetector:
         self,
         model_path: Optional[str] = None,
         device: str = "auto",
-        conf_threshold: float = 0.25,
+        conf_threshold: float = 0.08,
         iou_threshold: float = 0.45,
         img_size: int = 640,
         vehicle_class_ids: Optional[Dict[int, str]] = None,
@@ -278,6 +278,13 @@ class GlobalDetector:
                             "confidence_score": clamp_confidence(confidence),
                         }
                     )
+
+            # Fallback: On cam ROI tespit edilemediyse arac bbox'indan sezgisel cikarim
+            if result.windshield_roi is None and result.vehicle_bbox is not None:
+                vx1, vy1, vx2, vy2 = result.vehicle_bbox
+                vh = max(1, vy2 - vy1)
+                result.windshield_roi = (vx1, vy1 + int(vh * 0.15), vx2, vy1 + int(vh * 0.65))
+                result.windshield_conf = result.vehicle_type_conf * 0.8
 
         except Exception as e:
             logger.warning(f"[Modul 1] Kare islenirken hata: {e}")

@@ -245,11 +245,12 @@ class TrajectoryTracker:
         # Kriter 1: Yanal standart sapma
         lateral_std = np.std(x_values)
 
-        # Kriter 2: Yon degistirme sayisi
-        # Yanal hiz (fark) hesapla
+        # Kriter 2: Gürültüden etkilenmeyen (deadzone korumalı) türev & zigzag hesabı
+        # Küçük titreşimleri (< 1.5 piksel) sıfıra yuvarlayarak sahte yön değişimlerini eler
         dx = np.diff(x_values)
-        # Isaret degisikliklerini say
-        sign_changes = np.sum(np.abs(np.diff(np.sign(dx))) > 0)
+        significant_dx = np.where(np.abs(dx) > 1.5, dx, 0)
+        active_dirs = np.sign(significant_dx[significant_dx != 0])
+        sign_changes = int(np.sum(np.abs(np.diff(active_dirs)) > 0)) if len(active_dirs) > 1 else 0
 
         # Slalom tespiti
         if (
@@ -271,6 +272,36 @@ class TrajectoryTracker:
             logger.info(
                 f"[Modul 4] SLALOM tespit edildi @ {current_time:.1f}s "
                 f"(std={lateral_std:.1f}, yon_degisim={sign_changes})"
+            )
+
+    # ==================================================================
+    # Görselleştirme (Teknofest Jüri Gösterimi)
+    # ==================================================================
+    def draw_trajectory(self, frame: Any, current_time: float):
+        """
+        Araç merkezinin son 5 saniyelik yörünge kuyruğunu (tail) ekrana çizer.
+        Slalom tespiti varsa kırmızı zigzag uyarısı verir.
+        """
+        import cv2
+        window_start = current_time - self.window_seconds
+        pts = [
+            (int(t[1]), int(t[2])) for t in self.trajectory if t[0] >= window_start
+        ]
+        if len(pts) < 2:
+            return
+
+        is_slalom_active = (current_time - self._last_slalom_time) < 2.5
+        color = (0, 0, 255) if is_slalom_active else (255, 200, 0)
+
+        for i in range(1, len(pts)):
+            thickness = max(1, int(4 * (i / len(pts))))
+            cv2.line(frame, pts[i-1], pts[i], color, thickness)
+
+        if is_slalom_active:
+            cv2.putText(
+                frame, "⚠️ SLALOM IHLALI (ZIGZAG)", 
+                (max(10, pts[-1][0] - 80), max(30, pts[-1][1] - 40)), 
+                cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2
             )
 
     # ==================================================================

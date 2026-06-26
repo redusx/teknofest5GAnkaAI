@@ -136,3 +136,27 @@ source_mappings:
   #   eski_id: yeni_standart_id
   #   0: 0
   #   1: 7
+
+  # --- gelismisSurucuİzlemeSD (YOLO detection) ---
+  # yawn(0)->esneme(8), seatbelt(2)->emniyet_kemeri_ihlali(14), mobile(3)->telefonla_konusma(11)
+  # eyesclosed(1) kilavuzda tanimli degil, cikarildi.
+  gelismis_surucu:
+    0: 8
+    2: 14
+    3: 11
+
+  # --- dmd (YOLO detection) ---
+  # Cigarette(2)->sigara_icme(9), Phone(3)->telefonla_konusma(11), Seatbelt(4)->emniyet_kemeri_ihlali(14)
+  # Open Eye(0) ve Closed Eye(1) kilavuzda tanimli degil, cikarildi.
+  dmd_dataset:
+    2: 9
+    3: 11
+    4: 14
+
+  # --- Driver Behavior Image Dataset (Klasor bazli siniflandirma → YOLO detection) ---
+  # safe_driving ve other_activities kilavuzda tanimli degil, cikarildi.
+  driver_behavior:
+    talking_phone: 11
+    texting_phone: 11
+    turning: 7
+

@@ -35,9 +35,9 @@ logger = logging.getLogger("pipeline")
 # ==============================================================================
 # Varsayilan Yapilandirma
 # ==============================================================================
-DEFAULT_CONF_THRESHOLD = 0.25
+DEFAULT_CONF_THRESHOLD = 0.08
 DEFAULT_IOU_THRESHOLD = 0.45
-DEFAULT_FRAME_SKIP = 3          # Her N karede bir isle (5-10 FPS hedefi)
+DEFAULT_FRAME_SKIP = 2          # Her N karede bir isle (15 FPS hedefi)
 DEFAULT_IMG_SIZE = 640
 
 

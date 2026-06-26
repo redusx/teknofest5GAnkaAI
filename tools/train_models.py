@@ -190,6 +190,64 @@ def train_classification():
 
 
 # ==============================================================================
+# CABIN EGITIMI (Modul 2)
+# ==============================================================================
+def train_cabin():
+    """
+    Modul 2 (Kabin Analizi): Sofor eylemleri + Emniyet kemeri detection
+    OOM-safe parametreler:
+      - batch=16
+      - workers=2
+      - save_period=5
+      - model: yolo11n.pt (Nano model - Modul 2 hiz ve hafiflik kistina uygun)
+    """
+    print("=" * 60)
+    print("MODUL 2: KABIN ICI ANALIZ (CABIN DETECTION) EGITIMI")
+    print("=" * 60)
+
+    data_yaml = DATASETS_DIR / "merged_cabin_monitoring" / "data.yaml"
+    if not data_yaml.exists():
+        print(f"[HATA] Veri seti bulunamadi: {data_yaml}")
+        print("  Öncelikle çalıştırın: python tools/prepare_cabin_datasets.py")
+        return
+
+    clean_memory()
+    print_gpu_status()
+
+    # Model yukle
+    model_name = "yolo11n.pt"
+    try:
+        model = YOLO(model_name)
+    except Exception:
+        print(f"  {model_name} bulunamadi, yolov8n.pt deneniyor...")
+        model = YOLO("yolov8n.pt")
+
+    # --- OOM-SAFE PARAMETRELER ---
+    results = model.train(
+        data=str(data_yaml),
+        epochs=50,
+        imgsz=640,
+        batch=16,
+        device=0,
+        workers=2,
+        project=str(BASE_DIR / "runs" / "train"),
+        name="cabin_detection",
+        exist_ok=True,
+        amp=True,
+        patience=15,
+        save_period=5,
+        cache=False,
+        resume=False,
+    )
+
+    clean_memory()
+
+    # En iyi agirligi kopyala
+    best_pt = BASE_DIR / "runs" / "train" / "cabin_detection" / "weights" / "best.pt"
+    safe_copy_weights(best_pt, MODELS_DIR / "cabin_yolo.pt")
+
+
+# ==============================================================================
 # ANA GIRIS
 # ==============================================================================
 if __name__ == "__main__":
@@ -199,9 +257,9 @@ if __name__ == "__main__":
     parser.add_argument(
         "--task",
         type=str,
-        choices=["detection", "classification"],
+        choices=["detection", "classification", "cabin"],
         required=True,
-        help="Hangi model egitilecek? (detection / classification)",
+        help="Hangi model egitilecek? (detection / classification / cabin)",
     )
     args = parser.parse_args()
 
@@ -225,6 +283,8 @@ if __name__ == "__main__":
             train_detection()
         elif args.task == "classification":
             train_classification()
+        elif args.task == "cabin":
+            train_cabin()
     except Exception as e:
         print(f"\n❌ EGITIM SIRASINDA HATA: {e}")
         clean_memory()
@@ -232,3 +292,4 @@ if __name__ == "__main__":
     finally:
         clean_memory()
         print("\n🏁 Betik tamamlandi. Bellek temizlendi.")
+
