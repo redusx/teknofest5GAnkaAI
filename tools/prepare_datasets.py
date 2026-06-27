@@ -5,10 +5,10 @@ TEKNOFEST 2026 - ANKAAI
 Veri Seti Uyumlastirma Betigi (Dataset Harmonization Script)
 
 Bu betik 4 ham veri setini yarisma kilavuzuna uygun formata donusturur:
-  1. Cars_Body_Type       → YOLO Detection (merged_detection)
-  2. vehicles.v2          → YOLO Detection (merged_detection) — secici filtreleme
-  3. plateRecognition     → YOLO Detection (merged_detection) — ID donusumu + split
-  4. colorRecognition     → YOLO Classification (color_classification) — Turkce isimler
+  1. Cars_Body_Type       -> YOLO Detection (merged_detection)
+  2. vehicles.v2          -> YOLO Detection (merged_detection) - secici filtreleme
+  3. plateRecognition     -> YOLO Detection (merged_detection) - ID donusumu + split
+  4. colorRecognition     -> YOLO Classification (color_classification) - Turkce isimler
 
 KURALLAR (FTR Kilavuz):
   - Tum etiketler ASCII-safe ve kucuk harfli
@@ -27,6 +27,9 @@ from pathlib import Path
 # ==============================================================================
 # Logger
 # ==============================================================================
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8", errors="ignore")
+
 logging.basicConfig(
     level=logging.INFO,
     format="[%(levelname)s] %(asctime)s - %(message)s",
@@ -54,24 +57,24 @@ CBT_CLASS_MAP = {
     "Hatchback":   2,   # hatchback
     "Pick-Up":     3,   # pickup
     "VAN":         5,   # panelvan
-    "Coupe":       0,   # → sedan (kilavuzda coupe yok)
-    "Convertible": 0,   # → sedan (kilavuzda convertible yok)
+    "Coupe":       0,   # -> sedan (kilavuzda coupe yok)
+    "Convertible": 0,   # -> sedan (kilavuzda convertible yok)
 }
 
 # --- vehicles.v2 sinif esleme (sadece bu ID'ler alinacak) ---
 VEH_CLASS_MAP = {
-    0: 4,   # big bus    → minibus
-    1: 6,   # big truck  → kamyon
-    6: 4,   # small bus  → minibus
-    7: 6,   # small truck → kamyon
+    0: 4,   # big bus    -> minibus
+    1: 6,   # big truck  -> kamyon
+    6: 4,   # small bus  -> minibus
+    7: 6,   # small truck -> kamyon
 }
 
 # --- plateRecognition sinif esleme ---
 PLATE_CLASS_MAP = {
-    0: 20,  # plaka → Class ID 20
+    0: 20,  # plaka -> Class ID 20
 }
 
-# --- colorRecognition renk esleme (Ingilizce → Turkce ASCII-safe) ---
+# --- colorRecognition renk esleme (Ingilizce -> Turkce ASCII-safe) ---
 COLOR_MAP = {
     "black":  "siyah",
     "white":  "beyaz",
@@ -105,7 +108,7 @@ def is_image(filename: str) -> bool:
 
 
 # ==============================================================================
-# ADIM 1: Cars_Body_Type → YOLO Detection
+# ADIM 1: Cars_Body_Type -> YOLO Detection
 # ==============================================================================
 def convert_cars_body_type():
     """
@@ -113,7 +116,7 @@ def convert_cars_body_type():
     Her goruntunun tamami arac oldugu icin tam kare bbox atanir.
     """
     logger.info("=" * 60)
-    logger.info("ADIM 1: Cars_Body_Type → YOLO Detection")
+    logger.info("ADIM 1: Cars_Body_Type -> YOLO Detection")
     logger.info("=" * 60)
 
     src_dir = DATASETS_DIR / "Cars_Body_Type"
@@ -165,7 +168,7 @@ def convert_cars_body_type():
                 count += 1
 
             logger.info(
-                f"  {src_split}/{class_name} → Class {class_id}: "
+                f"  {src_split}/{class_name} -> Class {class_id}: "
                 f"{count} goruntu kopyalandi"
             )
             total_copied += count
@@ -175,7 +178,7 @@ def convert_cars_body_type():
 
 
 # ==============================================================================
-# ADIM 2: vehicles.v2 — Secici Filtreleme
+# ADIM 2: vehicles.v2 - Secici Filtreleme
 # ==============================================================================
 def convert_vehicles_v2():
     """
@@ -183,7 +186,7 @@ def convert_vehicles_v2():
     Diger siniflar atilir.
     """
     logger.info("=" * 60)
-    logger.info("ADIM 2: vehicles.v2 → Secici Filtreleme")
+    logger.info("ADIM 2: vehicles.v2 -> Secici Filtreleme")
     logger.info("=" * 60)
 
     src_dir = DATASETS_DIR / "vehicles.v2-release.yolov12"
@@ -277,15 +280,15 @@ def convert_vehicles_v2():
 
 
 # ==============================================================================
-# ADIM 3: plateRecognition → Class ID Donusumu + Split
+# ADIM 3: plateRecognition -> Class ID Donusumu + Split
 # ==============================================================================
 def convert_plate_recognition():
     """
-    plateRecognition verisinde Class ID 0 → 20 donusumu yapar
+    plateRecognition verisinde Class ID 0 -> 20 donusumu yapar
     ve %80/%10/%10 oraninda train/valid/test olarak boler.
     """
     logger.info("=" * 60)
-    logger.info("ADIM 3: plateRecognition → ID Donusumu + Split")
+    logger.info("ADIM 3: plateRecognition -> ID Donusumu + Split")
     logger.info("=" * 60)
 
     src_dir = DATASETS_DIR / "plateRecognition"
@@ -343,7 +346,7 @@ def convert_plate_recognition():
             # Goruntu kopyala
             shutil.copy2(img_file, img_out / new_name)
 
-            # Label donustur: Class 0 → Class 20
+            # Label donustur: Class 0 -> Class 20
             new_lines = []
             for line in lbl_file.read_text().strip().split("\n"):
                 line = line.strip()
@@ -365,17 +368,17 @@ def convert_plate_recognition():
 
 
 # ==============================================================================
-# ADIM 4: colorRecognition → YOLO Classification (Turkce isimler)
+# ADIM 4: colorRecognition -> YOLO Classification (Turkce isimler)
 # ==============================================================================
 def convert_color_recognition():
     """
     colorRecognition siniflandirma verisini Turkce ASCII-safe
     klasor isimleriyle yeni dizine kopyalar.
     pink ve purple cikarilir.
-    silver→gri, tan/beige→kahverengi, gold→sari birlestirilir.
+    silver->gri, tan/beige->kahverengi, gold->sari birlestirilir.
     """
     logger.info("=" * 60)
-    logger.info("ADIM 4: colorRecognition → Turkce Siniflandirma")
+    logger.info("ADIM 4: colorRecognition -> Turkce Siniflandirma")
     logger.info("=" * 60)
 
     src_dir = DATASETS_DIR / "colorRecognition"
@@ -432,7 +435,7 @@ def convert_color_recognition():
                 count += 1
 
             logger.info(
-                f"  {src_split}/{eng_name} → {tr_name}: {count} goruntu"
+                f"  {src_split}/{eng_name} -> {tr_name}: {count} goruntu"
             )
             total_copied += count
 
@@ -440,6 +443,159 @@ def convert_color_recognition():
         f"  colorRecognition TOPLAM: {total_copied} kopyalandi, "
         f"{total_excluded} cikarildi"
     )
+    logger.info("")
+
+
+# ==============================================================================
+# ADIM 4.1: Teknocan Veri Setleri -> YOLO Detection
+# ==============================================================================
+def convert_teknocan_objects():
+    """
+    sadece_teknocan_dataset ve teknocan-dataset icerisindeki Class 0
+    etiketlerini projenin standart teknocan ID'sine (15) donusturur
+    ve 80/10/10 oraninda train/valid/test olarak boler.
+    """
+    logger.info("=" * 60)
+    logger.info("ADIM 4.1: Teknocan Veri Setleri -> Class ID 15")
+    logger.info("=" * 60)
+
+    dirs_to_check = [
+        DATASETS_DIR / "sadece_teknocan_dataset-20260627T100238Z-3-001" / "sadece_teknocan_dataset",
+        DATASETS_DIR / "teknocan-dataset" / "teknocan-dataset"
+    ]
+
+    pairs = []
+    for d in dirs_to_check:
+        img_dir = d / "images" / "train"
+        lbl_dir = d / "labels" / "train"
+        if not img_dir.exists() or not lbl_dir.exists():
+            logger.warning(f"Dizin bulunamadi veya eksik: {d}")
+            continue
+
+        for lbl_file in sorted(lbl_dir.iterdir()):
+            if lbl_file.suffix != ".txt":
+                continue
+            stem = lbl_file.stem
+            for ext in [".jpg", ".jpeg", ".png", ".webp"]:
+                candidate = img_dir / f"{stem}{ext}"
+                if candidate.exists():
+                    pairs.append((candidate, lbl_file))
+                    break
+
+    logger.info(f"  Toplam teknocan cifti: {len(pairs)}")
+    if not pairs:
+        logger.info("")
+        return
+
+    random.seed(RANDOM_SEED)
+    random.shuffle(pairs)
+
+    n = len(pairs)
+    n_train = int(n * 0.8)
+    n_valid = int(n * 0.1)
+
+    splits = {
+        "train": pairs[:n_train],
+        "valid": pairs[n_train:n_train + n_valid],
+        "test":  pairs[n_train + n_valid:],
+    }
+
+    for split_name, split_pairs in splits.items():
+        img_out = MERGED_DIR / split_name / "images"
+        lbl_out = MERGED_DIR / split_name / "labels"
+        ensure_dir(img_out)
+        ensure_dir(lbl_out)
+
+        for img_file, lbl_file in split_pairs:
+            new_name = f"tkn_{img_file.name}"
+            new_stem = f"tkn_{lbl_file.stem}"
+
+            shutil.copy2(img_file, img_out / new_name)
+
+            new_lines = []
+            for line in lbl_file.read_text().strip().split("\n"):
+                line = line.strip()
+                if not line:
+                    continue
+                parts = line.split()
+                if len(parts) >= 5:
+                    new_lines.append(f"15 {' '.join(parts[1:])}")
+
+            (lbl_out / f"{new_stem}.txt").write_text(
+                "\n".join(new_lines) + "\n"
+            )
+
+        logger.info(f"  {split_name}: {len(split_pairs)} goruntu")
+
+    logger.info("")
+
+
+# ==============================================================================
+# ADIM 4.2: Bilgisayar Veri Seti -> YOLO Detection
+# ==============================================================================
+def convert_bilgisayar_objects():
+    """
+    bilgisayar-dataset icerisindeki Class 0 etiketlerini
+    projenin standart bilgisayar ID'sine (16) donusturur.
+    """
+    logger.info("=" * 60)
+    logger.info("ADIM 4.2: Bilgisayar Veri Seti -> Class ID 16")
+    logger.info("=" * 60)
+
+    src_dir = DATASETS_DIR / "bilgisayar-dataset" / "bilgisayar-dataset"
+    if not src_dir.exists():
+        logger.warning(f"Dizin bulunamadi: {src_dir}")
+        return
+
+    split_map = {"train": "train", "valid": "valid", "test": "test"}
+
+    for src_split, dst_split in split_map.items():
+        img_dir = src_dir / src_split / "images"
+        lbl_dir = src_dir / src_split / "labels"
+        if not img_dir.exists() or not lbl_dir.exists():
+            continue
+
+        img_out = MERGED_DIR / dst_split / "images"
+        lbl_out = MERGED_DIR / dst_split / "labels"
+        ensure_dir(img_out)
+        ensure_dir(lbl_out)
+
+        count = 0
+        for lbl_file in sorted(lbl_dir.iterdir()):
+            if lbl_file.suffix != ".txt":
+                continue
+            stem = lbl_file.stem
+            img_file = None
+            for ext in [".jpg", ".jpeg", ".png", ".webp"]:
+                candidate = img_dir / f"{stem}{ext}"
+                if candidate.exists():
+                    img_file = candidate
+                    break
+
+            if img_file is None:
+                continue
+
+            new_name = f"blg_{img_file.name}"
+            new_stem = f"blg_{lbl_file.stem}"
+
+            shutil.copy2(img_file, img_out / new_name)
+
+            new_lines = []
+            for line in lbl_file.read_text().strip().split("\n"):
+                line = line.strip()
+                if not line:
+                    continue
+                parts = line.split()
+                if len(parts) >= 5:
+                    new_lines.append(f"16 {' '.join(parts[1:])}")
+
+            (lbl_out / f"{new_stem}.txt").write_text(
+                "\n".join(new_lines) + "\n"
+            )
+            count += 1
+
+        logger.info(f"  {dst_split}: {count} goruntu")
+
     logger.info("")
 
 
@@ -454,25 +610,27 @@ def create_data_yaml():
     logger.info("ADIM 5: data.yaml Olusturuluyor")
     logger.info("=" * 60)
 
-    yaml_content = """# ==============================================================================
+    yaml_content = f"""# ==============================================================================
 # TEKNOFEST 2026 - ANKAAI
 # Birlesik Detection Veri Seti (merged_detection)
 # ==============================================================================
 # Otomatik olusturuldu: tools/prepare_datasets.py
 #
 # Kaynaklar:
-#   - Cars_Body_Type (cbt_*) — arac tipi tespiti
-#   - vehicles.v2 (veh_*)    — minibus ve kamyon
-#   - plateRecognition (plt_*) — plaka tespiti
+#   - Cars_Body_Type (cbt_*) - arac tipi tespiti
+#   - vehicles.v2 (veh_*)    - minibus ve kamyon
+#   - plateRecognition (plt_*) - plaka tespiti
+#   - teknocan (tkn_*)       - teknocan nesne tespiti
+#   - bilgisayar (blg_*)     - bilgisayar nesne tespiti
 # ==============================================================================
 
-path: .
+path: {MERGED_DIR.as_posix()}
 train: train/images
 val: valid/images
 test: test/images
 
 # En yuksek Class ID (20) + 1 = 21
-# Bos siniflar (7-19) YOLO tarafindan otomatik yonetilir
+# Bos siniflar (7-14, 17-19) YOLO tarafindan otomatik yonetilir
 nc: 21
 
 names:
@@ -548,7 +706,7 @@ def print_statistics():
             names = {
                 "0": "sedan", "1": "suv", "2": "hatchback",
                 "3": "pickup", "4": "minibus", "5": "panelvan",
-                "6": "kamyon", "20": "plaka",
+                "6": "kamyon", "15": "teknocan", "16": "bilgisayar", "20": "plaka",
             }
             name = names.get(cid, f"class_{cid}")
             logger.info(f"    Class {cid} ({name}): {class_counts[cid]}")
@@ -597,9 +755,12 @@ def main():
     convert_vehicles_v2()          # Adim 2
     convert_plate_recognition()    # Adim 3
     convert_color_recognition()    # Adim 4
+    convert_teknocan_objects()     # Adim 4.1
+    convert_bilgisayar_objects()   # Adim 4.2
     create_data_yaml()             # Adim 5
     print_statistics()             # Adim 6
 
 
 if __name__ == "__main__":
     main()
+

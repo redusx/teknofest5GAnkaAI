@@ -5,9 +5,9 @@ TEKNOFEST 2026 - ANKAAI
 Modül 2 (Kabin İçi Analiz) Veri Seti Uyumlaştırma Betigi
 
 Bu betik ham veri setlerini yarışma kılavuzuna uygun formata dönüştürür:
-  1. gelismisSurucuİzlemeSD       → YOLO Detection (esneme, kemer, telefon)
-  2. dmd                          → YOLO Detection (sigara, telefon, kemer)
-  3. Driver Behavior Image Dataset → YOLO Detection (telefon, arkaya_bakma) — tam kare bbox
+  1. gelismisSurucuİzlemeSD       -> YOLO Detection (esneme, kemer, telefon)
+  2. dmd                          -> YOLO Detection (sigara, telefon, kemer)
+  3. Driver Behavior Image Dataset -> YOLO Detection (telefon, arkaya_bakma) - tam kare bbox
 
 KURALLAR (FTR Kılavuz):
   - Tüm etiketler ASCII-safe ve küçük harfli
@@ -93,7 +93,7 @@ def find_image_for_label(lbl_path: Path, img_dir: Path):
 
 
 # ==============================================================================
-# ADIM 1: gelismisSurucuİzlemeSD → YOLO Detection
+# ADIM 1: gelismisSurucuİzlemeSD -> YOLO Detection
 # ==============================================================================
 def convert_gelismis_surucu():
     """
@@ -214,7 +214,7 @@ def convert_gelismis_surucu():
 
 
 # ==============================================================================
-# ADIM 2: dmd → YOLO Detection
+# ADIM 2: dmd -> YOLO Detection
 # ==============================================================================
 def convert_dmd():
     """
@@ -284,7 +284,7 @@ def convert_dmd():
 
 
 # ==============================================================================
-# ADIM 3: Driver Behavior Image Dataset → Tam Kare YOLO Detection
+# ADIM 3: Driver Behavior Image Dataset -> Tam Kare YOLO Detection
 # ==============================================================================
 def convert_driver_behavior():
     """
@@ -350,6 +350,143 @@ def convert_driver_behavior():
 
 
 # ==============================================================================
+# ADIM 3.1: Teknocan Veri Setleri -> YOLO Detection
+# ==============================================================================
+def convert_teknocan_objects():
+    """Teknocan etiketlerini (Class 0) standart Class ID 15'e dönüştürür."""
+    logger.info("=" * 60)
+    logger.info("ADIM 3.1: Teknocan Veri Setleri -> Class ID 15")
+    logger.info("=" * 60)
+
+    dirs_to_check = [
+        DATASETS_DIR / "sadece_teknocan_dataset-20260627T100238Z-3-001" / "sadece_teknocan_dataset",
+        DATASETS_DIR / "teknocan-dataset" / "teknocan-dataset"
+    ]
+
+    pairs = []
+    for d in dirs_to_check:
+        img_dir = d / "images" / "train"
+        lbl_dir = d / "labels" / "train"
+        if not img_dir.exists() or not lbl_dir.exists():
+            continue
+
+        for lbl_file in sorted(lbl_dir.iterdir()):
+            if lbl_file.suffix != ".txt":
+                continue
+            stem = lbl_file.stem
+            for ext in [".jpg", ".jpeg", ".png", ".webp"]:
+                candidate = img_dir / f"{stem}{ext}"
+                if candidate.exists():
+                    pairs.append((candidate, lbl_file))
+                    break
+
+    if not pairs:
+        return
+
+    random.seed(RANDOM_SEED)
+    random.shuffle(pairs)
+
+    n = len(pairs)
+    n_train = int(n * 0.8)
+    n_valid = int(n * 0.1)
+
+    splits = {
+        "train": pairs[:n_train],
+        "valid": pairs[n_train:n_train + n_valid],
+        "test":  pairs[n_train + n_valid:],
+    }
+
+    for split_name, split_pairs in splits.items():
+        img_out = OUTPUT_DIR / split_name / "images"
+        lbl_out = OUTPUT_DIR / split_name / "labels"
+        ensure_dir(img_out)
+        ensure_dir(lbl_out)
+
+        for img_file, lbl_file in split_pairs:
+            new_name = f"tkn_{img_file.name}"
+            new_stem = f"tkn_{lbl_file.stem}"
+
+            shutil.copy2(img_file, img_out / new_name)
+
+            new_lines = []
+            for line in lbl_file.read_text(encoding="utf-8", errors="ignore").strip().split("\n"):
+                line = line.strip()
+                if not line:
+                    continue
+                parts = line.split()
+                if len(parts) >= 5:
+                    new_lines.append(f"15 {' '.join(parts[1:])}")
+
+            (lbl_out / f"{new_stem}.txt").write_text("\n".join(new_lines) + "\n", encoding="utf-8")
+
+    logger.info(f"  Teknocan uyumlaştırıldı: {len(pairs)} görsel.")
+    logger.info("")
+
+
+# ==============================================================================
+# ADIM 3.2: Bilgisayar Veri Seti -> YOLO Detection
+# ==============================================================================
+def convert_bilgisayar_objects():
+    """Bilgisayar etiketlerini (Class 0) standart Class ID 16'ya dönüştürür."""
+    logger.info("=" * 60)
+    logger.info("ADIM 3.2: Bilgisayar Veri Seti -> Class ID 16")
+    logger.info("=" * 60)
+
+    src_dir = DATASETS_DIR / "bilgisayar-dataset" / "bilgisayar-dataset"
+    if not src_dir.exists():
+        return
+
+    split_map = {"train": "train", "valid": "valid", "test": "test"}
+
+    for src_split, dst_split in split_map.items():
+        img_dir = src_dir / src_split / "images"
+        lbl_dir = src_dir / src_split / "labels"
+        if not img_dir.exists() or not lbl_dir.exists():
+            continue
+
+        img_out = OUTPUT_DIR / dst_split / "images"
+        lbl_out = OUTPUT_DIR / dst_split / "labels"
+        ensure_dir(img_out)
+        ensure_dir(lbl_out)
+
+        count = 0
+        for lbl_file in sorted(lbl_dir.iterdir()):
+            if lbl_file.suffix != ".txt":
+                continue
+            stem = lbl_file.stem
+            img_file = None
+            for ext in [".jpg", ".jpeg", ".png", ".webp"]:
+                candidate = img_dir / f"{stem}{ext}"
+                if candidate.exists():
+                    img_file = candidate
+                    break
+
+            if img_file is None:
+                continue
+
+            new_name = f"blg_{img_file.name}"
+            new_stem = f"blg_{lbl_file.stem}"
+
+            shutil.copy2(img_file, img_out / new_name)
+
+            new_lines = []
+            for line in lbl_file.read_text(encoding="utf-8", errors="ignore").strip().split("\n"):
+                line = line.strip()
+                if not line:
+                    continue
+                parts = line.split()
+                if len(parts) >= 5:
+                    new_lines.append(f"16 {' '.join(parts[1:])}")
+
+            (lbl_out / f"{new_stem}.txt").write_text("\n".join(new_lines) + "\n", encoding="utf-8")
+            count += 1
+
+        logger.info(f"  Bilgisayar {dst_split}: {count} görsel.")
+
+    logger.info("")
+
+
+# ==============================================================================
 # ADIM 4: data.yaml Oluştur
 # ==============================================================================
 def create_data_yaml():
@@ -409,7 +546,7 @@ def print_summary():
     class_names = {
         7: "arkaya_bakma", 8: "esneme", 9: "sigara_icme",
         10: "su_icme", 11: "telefonla_konusma", 13: "etrafa_bakinma",
-        14: "emniyet_kemeri_ihlali",
+        14: "emniyet_kemeri_ihlali", 15: "teknocan", 16: "bilgisayar",
     }
 
     for split in ["train", "valid", "test"]:
@@ -434,8 +571,8 @@ def print_summary():
 
         logger.info(f"  {split}: {img_cnt} görsel")
         for cid in sorted(counts.keys()):
-            cname = class_names.get(cid, f"class_{cid}")
-            logger.info(f"    ID {cid} ({cname}): {counts[cid]} etiket")
+            name = class_names.get(cid, f"class_{cid}")
+            logger.info(f"    Class {cid} ({name}): {counts[cid]}")
 
     logger.info("=" * 60)
     logger.info("Veri seti hazırlama başarıyla tamamlandı!")
@@ -458,6 +595,8 @@ def main():
     convert_gelismis_surucu()
     convert_dmd()
     convert_driver_behavior()
+    convert_teknocan_objects()
+    convert_bilgisayar_objects()
     create_data_yaml()
     print_summary()
 

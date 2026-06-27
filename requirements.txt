@@ -29,8 +29,8 @@ lap>=0.4.0
 # [GELECEK] Asagidaki paketler modeller hazir oldugunda aktif edilecektir:
 # ==============================================================================
 # --- Plaka OCR (Modul 3) ---
-# fast-plate-ocr>=0.2.0
-# onnxruntime-gpu>=1.16.0
-#
+fast-plate-ocr>=0.2.0
+onnxruntime-gpu>=1.16.0
+
 # --- Alternatif OCR ---
 # easyocr>=1.7.0

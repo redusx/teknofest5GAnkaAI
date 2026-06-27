@@ -80,16 +80,16 @@ def safe_copy_weights(src: Path, dst: Path):
 # ==============================================================================
 # DETECTION EGITIMI (Modul 1)
 # ==============================================================================
-def train_detection():
+def train_detection(batch: int = 32, workers: int = 4):
     """
     Modul 1 (Kuresel Tespit): Arac tipi + Plaka bbox detection
-    OOM-safe parametreler:
-      - batch=16 (32'den dusuruldu — VRAM guvenli)
-      - workers=2 (8'den dusuruldu — RAM sizintisi onlendi)
+    16GB VRAM / 16GB RAM Optimize Parametreler:
+      - batch=32 (16GB VRAM yuksek kullanim)
+      - workers=4 (16GB RAM dengeli CPU verisi besleme)
       - save_period=5 (cokmeye karsi periyodik kayit)
     """
     print("=" * 60)
-    print("MODUL 1: KURESEL TESPIT (DETECTION) EGITIMI")
+    print(f"MODUL 1: KURESEL TESPIT (DETECTION) EGITIMI (batch={batch}, workers={workers})")
     print("=" * 60)
 
     data_yaml = DATASETS_DIR / "merged_detection" / "data.yaml"
@@ -108,18 +108,18 @@ def train_detection():
         print(f"  {model_name} bulunamadi, yolov8s.pt deneniyor...")
         model = YOLO("yolov8s.pt")
 
-    # --- OOM-SAFE PARAMETRELER ---
+    # --- GPU OPTIMIZE PARAMETRELER ---
     results = model.train(
         data=str(data_yaml),
         epochs=50,
         imgsz=640,
-        batch=16,             # 32'den 16'ya dusuruldu (VRAM guvenli)
+        batch=batch,
         device=0,
-        workers=2,            # 8'den 2'ye dusuruldu (RAM sizintisi onlemi)
+        workers=workers,
         project=str(BASE_DIR / "runs" / "train"),
         name="global_detection",
         exist_ok=True,
-        amp=True,             # Mixed precision — VRAM tasarrufu
+        amp=True,             # Mixed precision — VRAM tasarrufu ve hiz
         patience=15,
         save_period=5,        # Her 5 epoch'ta checkpoint kaydet
         cache=False,          # RAM'de onbellekleme KAPALI (16GB RAM icin zorunlu)
@@ -192,17 +192,17 @@ def train_classification():
 # ==============================================================================
 # CABIN EGITIMI (Modul 2)
 # ==============================================================================
-def train_cabin():
+def train_cabin(batch: int = 32, workers: int = 4):
     """
     Modul 2 (Kabin Analizi): Sofor eylemleri + Emniyet kemeri detection
-    OOM-safe parametreler:
-      - batch=16
-      - workers=2
+    16GB VRAM / 16GB RAM Optimize Parametreler:
+      - batch=32
+      - workers=4
       - save_period=5
       - model: yolo11n.pt (Nano model - Modul 2 hiz ve hafiflik kistina uygun)
     """
     print("=" * 60)
-    print("MODUL 2: KABIN ICI ANALIZ (CABIN DETECTION) EGITIMI")
+    print(f"MODUL 2: KABIN ICI ANALIZ (CABIN DETECTION) EGITIMI (batch={batch}, workers={workers})")
     print("=" * 60)
 
     data_yaml = DATASETS_DIR / "merged_cabin_monitoring" / "data.yaml"
@@ -222,14 +222,14 @@ def train_cabin():
         print(f"  {model_name} bulunamadi, yolov8n.pt deneniyor...")
         model = YOLO("yolov8n.pt")
 
-    # --- OOM-SAFE PARAMETRELER ---
+    # --- GPU OPTIMIZE PARAMETRELER ---
     results = model.train(
         data=str(data_yaml),
         epochs=50,
         imgsz=640,
-        batch=16,
+        batch=batch,
         device=0,
-        workers=2,
+        workers=workers,
         project=str(BASE_DIR / "runs" / "train"),
         name="cabin_detection",
         exist_ok=True,
@@ -261,6 +261,18 @@ if __name__ == "__main__":
         required=True,
         help="Hangi model egitilecek? (detection / classification / cabin)",
     )
+    parser.add_argument(
+        "--batch",
+        type=int,
+        default=32,
+        help="Batch size (16GB VRAM icin 32-48 onerilir)",
+    )
+    parser.add_argument(
+        "--workers",
+        type=int,
+        default=4,
+        help="DataLoader worker sayisi (16GB RAM icin 4 onerilir)",
+    )
     args = parser.parse_args()
 
     # Sistem bilgisi
@@ -280,11 +292,11 @@ if __name__ == "__main__":
     # Gorevi calistir
     try:
         if args.task == "detection":
-            train_detection()
+            train_detection(batch=args.batch, workers=args.workers)
         elif args.task == "classification":
             train_classification()
         elif args.task == "cabin":
-            train_cabin()
+            train_cabin(batch=args.batch, workers=args.workers)
     except Exception as e:
         print(f"\n❌ EGITIM SIRASINDA HATA: {e}")
         clean_memory()

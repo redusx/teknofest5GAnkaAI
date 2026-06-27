@@ -29,6 +29,11 @@ import sys
 import json
 import time
 import logging
+import argparse
+
+# Windows terminal encoding reconfigure kuralı
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8", errors="ignore")
 
 # ==============================================================================
 # Logger Konfigurasyonu
@@ -50,9 +55,9 @@ from src.pipeline import InferencePipeline
 # ==============================================================================
 # Sabitler (FTR Model Kilavuz §6 ve §8)
 # ==============================================================================
-INPUT_PATH = "/app/data/input/video.mp4"
-OUTPUT_PATH = "/app/data/output/results.json"
-MODELS_DIR = "/app/models/"
+DEFAULT_INPUT_PATH = "/app/data/input/video.mp4"
+DEFAULT_OUTPUT_PATH = "/app/data/output/results.json"
+DEFAULT_MODELS_DIR = "/app/models/"
 
 
 def main():
@@ -66,6 +71,12 @@ def main():
 
     Tum islemler try-except bloklari ile korunmustur (FTR Model Kilavuz §7).
     """
+    parser = argparse.ArgumentParser(description="TEKNOFEST 2026 ANKAAI - Cikarim Hatti")
+    parser.add_argument("--input", type=str, default=DEFAULT_INPUT_PATH, help="Girdi videosu yolu")
+    parser.add_argument("--output", type=str, default=DEFAULT_OUTPUT_PATH, help="Cikti JSON yolu")
+    parser.add_argument("--models", type=str, default=DEFAULT_MODELS_DIR, help="Model klasoru")
+    args = parser.parse_args()
+
     logger.info("=" * 60)
     logger.info("TEKNOFEST 2026 - ANKAAI")
     logger.info("5G & Yapay Zeka ile Akilli Yol Guvenligi")
@@ -74,17 +85,20 @@ def main():
 
     start_time = time.time()
 
-    # --- Girdi Kontrolu ---
-    logger.info(f"Girdi videosu : {INPUT_PATH}")
-    logger.info(f"Model dizini  : {MODELS_DIR}")
-    logger.info(f"Cikti yolu    : {OUTPUT_PATH}")
+    input_path = args.input
+    output_path = args.output
+    models_dir = args.models
 
-    if not os.path.exists(INPUT_PATH):
-        logger.error(f"Hata: Girdi videosu bulunamadi -> {INPUT_PATH}")
+    # --- Girdi Kontrolu ---
+    logger.info(f"Girdi videosu : {input_path}")
+    logger.info(f"Model dizini  : {models_dir}")
+    logger.info(f"Cikti yolu    : {output_path}")
+
+    if not os.path.exists(input_path):
+        logger.error(f"Hata: Girdi videosu bulunamadi -> {input_path}")
         sys.exit(1)
 
     # Model dizini kontrolu
-    models_dir = MODELS_DIR
     if not os.path.exists(models_dir):
         logger.warning(
             f"Model dizini bulunamadi: {models_dir}, alternatif araniyor..."
@@ -111,7 +125,7 @@ def main():
         )
         shared_mode = not has_cabin_model
         if not shared_mode:
-            logger.info("Bağımsız Modül 2 kabin modeli bulundu, kaskat mod aktif edildi.")
+            logger.info("Bagimsi Modul 2 kabin modeli bulundu, kaskat mod aktif edildi.")
 
         # Pipeline olustur
         pipeline = InferencePipeline(
@@ -122,21 +136,21 @@ def main():
         )
 
         # Cikarim yap
-        output_data = pipeline.run(video_path=INPUT_PATH)
+        output_data = pipeline.run(video_path=input_path)
 
         # --- Cikti Dizinini Olustur ---
-        os.makedirs(os.path.dirname(OUTPUT_PATH), exist_ok=True)
+        os.makedirs(os.path.dirname(os.path.abspath(output_path)), exist_ok=True)
 
         # --- Sonuclari JSON Formatinda Yaz ---
         # ensure_ascii=False: Turkce karakterlerin duzgun yazilmasi (ZORUNLU)
-        with open(OUTPUT_PATH, "w", encoding="utf-8") as f:
+        with open(output_path, "w", encoding="utf-8") as f:
             json.dump(output_data, f, ensure_ascii=False, indent=2)
 
         elapsed = time.time() - start_time
         logger.info("")
         logger.info("=" * 60)
         logger.info("Islem basariyla tamamlandi!")
-        logger.info(f"Cikti kaydedildi: {OUTPUT_PATH}")
+        logger.info(f"Cikti kaydedildi: {output_path}")
         logger.info(f"Toplam sure: {elapsed:.2f} saniye")
         logger.info("=" * 60)
 

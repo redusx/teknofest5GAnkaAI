@@ -160,3 +160,9 @@ source_mappings:
     texting_phone: 11
     turning: 7
 
+  # --- Teknocan ve Bilgisayar Veri Setleri (YOLO detection) ---
+  teknocan_datasets:
+    0: 15
+  bilgisayar_dataset:
+    0: 16
+

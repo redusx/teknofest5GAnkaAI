@@ -42,7 +42,8 @@ WORKDIR /build
 # Python bagimliliklarini kur
 COPY requirements.txt .
 RUN pip3 install --no-cache-dir --upgrade pip && \
-    pip3 install --no-cache-dir -r requirements.txt
+    pip3 install --no-cache-dir -r requirements.txt && \
+    python3 -c "import fast_plate_ocr; fast_plate_ocr.LicensePlateRecognizer('cct-s-v2-global-model')"
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # [GELECEK] TensorRT Model Donusumu
@@ -96,6 +97,7 @@ RUN mkdir -p /app/data/input \
 COPY --from=builder /usr/local/lib/python3.10/dist-packages \
                     /usr/local/lib/python3.10/dist-packages
 COPY --from=builder /usr/local/bin /usr/local/bin
+COPY --from=builder /root/.cache /root/.cache
 
 # Model agirliklarini kopyala
 # NOT: /app/models/ yolu yarisma spesifikasyonunda belirtilen zorunlu yoldur
